@@ -25,6 +25,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE EVE.  ALL RIGHTS RESERVED.
 #include "error.h"
 #include "descent.h"
 #include "sdlgl.h"
+#ifdef __ANDROID__
+#	include "touch_input.h"
+#endif
 #include "key.h"
 #include "gamefont.h"
 #include "iff.h"
@@ -1341,6 +1344,12 @@ if (nBankSensMod > 2) {
 	m_info [0].bankTime *= 2;
 	m_info [0].bankTime /= nBankSensMod;
 	}
+#endif
+
+#ifdef __ANDROID__
+// Touch and gamepad input goes in here, with this manager's own bounds, so the
+// clamp below applies to it exactly as it does to keyboard, mouse and joystick.
+dxx_touch_apply_controls (m_maxTurnRate, m_maxTurnRate / FastPitch ());
 #endif
 
 //----------- Clamp values between -m_pollTime and m_pollTime
