@@ -1136,6 +1136,19 @@ if (!ogl.m_features.bShaders && (gameConfig.nVersion != D2X_IVER)) {
 
 // ----------------------------------------------------------------------------
 
+#ifdef __ANDROID__
+/* Android has no process entry point of its own: the OpenTouch JNI layer calls
+ * dxx_main() from PortableInit(). SDL_MAIN_HANDLED keeps SDL from renaming this
+ * to SDL_main. The redux and rebirth forks do the same, which is what lets one
+ * copy of the glue start any of them.
+ *
+ * Declared extern "C" first: this is C++, so without that the renamed function
+ * would be mangled and the glue - which declares it with C linkage, as dxx-redux
+ * needs - would not find it. */
+extern "C" int32_t SDLCALL dxx_main (int32_t argc, char* argv []);
+#	define main dxx_main
+#endif
+
 int32_t SDLCALL main (int32_t argc, char *argv[])
 {
 gameStates.app.bInitialized = 0;
