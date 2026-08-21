@@ -1011,6 +1011,31 @@ memcpy (gameData.pigData.tex.brightness.Buffer (),
 			gameData.pigData.tex.defaultBrightness [gameStates.app.bD1Mission].Buffer (),
 			gameData.pigData.tex.brightness. Size ());
 LoadTextureBrightness (pszLevelName, NULL);
+#ifdef __ANDROID__
+// That table comes from descent.lgt / descent2.lgt, which ship with the D2X-XL
+// data pack rather than with the games - and without it every texture reads as
+// unlit, so AddGeometryLights finds nothing and the mine is drawn black. The
+// per-texture light values the original games lit with are already here, in the
+// tmapinfo the game data itself carries, so fall back to those.
+	{
+		int32_t* pBrightness = gameData.pigData.tex.brightness.Buffer ();
+		tTexMapInfo* pTexMapInfo = gameData.pigData.tex.pTexMapInfo.Buffer ();
+		int32_t i, nLights = 0;
+
+	if (pBrightness && pTexMapInfo) {
+		for (i = 0; i < MAX_WALL_TEXTURES; i++)
+			if (pBrightness [i])
+				nLights++;
+		if (!nLights) {
+			for (i = 0; i < MAX_WALL_TEXTURES; i++)
+				if ((pBrightness [i] = pTexMapInfo [i].lighting))
+					nLights++;
+			PrintLog (0, "no texture brightness table (descent%s.lgt is missing): took %d light values from the tmapinfo\n",
+			          gameStates.app.bD1Mission ? "" : "2", nLights);
+			}
+		}
+	}
+#endif
 gameData.renderData.color.textures = gameData.renderData.color.defaultTextures [gameStates.app.bD1Mission];
 LoadTextureColors (pszLevelName, NULL);
 PrintLog (-1);

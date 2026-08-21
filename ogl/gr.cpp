@@ -73,6 +73,30 @@ if (mode <= 0)
 	return 0;
 w = SM_W (mode);
 h = SM_H (mode);
+#ifdef __ANDROID__
+// The mode tables hold desktop resolutions, and there is no mode switching here:
+// the window is the display. Sizing the engine's screen from the mode instead
+// leaves it drawing a 640x480 canvas into the corner of a 2410x1080 window,
+// which is exactly what it looked like - a small picture in the bottom left with
+// the menus laid out across the whole screen around it.
+	{
+		SDL_Window* pWindow = SdlGlGetWindow ();
+		SDL_DisplayMode displayMode;
+		int32_t nWidth = 0, nHeight = 0;
+
+	if (pWindow)
+		SDL_GetWindowSize (pWindow, &nWidth, &nHeight);
+	else if (!SDL_GetCurrentDisplayMode (0, &displayMode)) {
+		nWidth = displayMode.w;
+		nHeight = displayMode.h;
+		}
+	if ((nWidth > 0) && (nHeight > 0)) {
+		w = (uint32_t) nWidth;
+		h = (uint32_t) nHeight;
+		PrintLog (0, "screen mode %dx%d taken from the display\n", nWidth, nHeight);
+		}
+	}
+#endif
 nCurrentVGAMode = mode;
 gameData.renderData.screen.Destroy ();
 gameData.renderData.screen.Init ();
