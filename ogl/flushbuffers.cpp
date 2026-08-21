@@ -29,6 +29,7 @@
 #endif
 
 #include "descent.h"
+#include "sdlgl.h"
 #include "error.h"
 #include "u_mem.h"
 #include "config.h"
@@ -293,7 +294,7 @@ if (gameStates.app.bGameRunning)	{
 	}
 else if (IsSideBySideDevice () || (gameStates.render.bRenderIndirect > 0))
 	FlushDrawBuffer ();
-SDL_GL_SwapBuffers ();
+SdlGlSwapBuffersInternal ();
 if (gameStates.app.bSaveScreenShot)
 	SaveScreenShot (NULL, 0);
 SetupCanvasses (-1.0f);

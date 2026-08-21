@@ -1263,7 +1263,7 @@ gameStates.input.bKeepSlackTime = 1;
 
 
 if (!gameOpts->legacy.bInput)
-	event_poll (SDL_ALLEVENTS);	//why poll 2 dozen times in the following code when input polling calls all necessary input handlers anyway?
+	event_poll ();	//why poll 2 dozen times in the following code when input polling calls all necessary input handlers anyway?
 
 SetType ();
 
@@ -1441,7 +1441,7 @@ void CControlsManager::FlushInput (void)
 	int32_t	b = gameOpts->legacy.bInput;
 
 gameOpts->legacy.bInput = 1;
-event_poll (SDL_ALLEVENTS);
+event_poll ();
 gameOpts->legacy.bInput = b;
 KeyFlush ();
 MouseFlush ();

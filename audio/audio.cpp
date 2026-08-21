@@ -791,9 +791,13 @@ if (!gameStates.sound.bDynamic && m_info.bAvailable)
 
 if (!m_bSDLInitialized) {
 	if (driver && *driver) {
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+		SDL_setenv ("SDL_AUDIODRIVER", driver, 1);
+#else
 		char szEnvVar [100];
 		sprintf (szEnvVar, "SDL_AUDIODRIVER=%s", driver);
 		SDL_putenv (szEnvVar);
+#endif
 		}
 	if (SDL_InitSubSystem (SDL_INIT_AUDIO) < 0)
 		RETVAL (AudioError ())

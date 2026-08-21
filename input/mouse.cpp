@@ -126,7 +126,7 @@ void MouseFlush (void)	// clears all mouse events...
 	int32_t i;
 	fix xCurTime;
 
-event_poll (SDL_MOUSEEVENTMASK);
+event_poll ();
 xCurTime = TimerGetFixedSeconds ();
 memset (&mouseData, 0, sizeof (mouseData));
 for (i = 0; i < MOUSE_MAX_BUTTONS; i++)
@@ -154,7 +154,7 @@ void MouseGetPos (int32_t *x, int32_t *y)
 void MouseGetDelta (int32_t *dx, int32_t *dy)
 {
 if (gameOpts->legacy.bInput)
-   event_poll (SDL_MOUSEEVENTMASK);	//polled in main/KConfig.c:read_bm_all()
+   event_poll ();	//polled in main/KConfig.c:read_bm_all()
 *dx = mouseData.dx;
 *dy = mouseData.dy;
 mouseData.dx = 0;
@@ -239,7 +239,7 @@ return timeDown;
 int32_t MouseButtonState (int32_t button)
 {
 if (gameOpts->legacy.bInput)
-   event_poll(SDL_MOUSEEVENTMASK);	//polled in main/KConfig.c:read_bm_all()
+   event_poll ();	//polled in main/KConfig.c:read_bm_all()
 int32_t h = mouseData.buttons [button].rotated;
 mouseData.buttons [button].rotated = 0;
 return mouseData.buttons [button].pressed || h;
