@@ -25,6 +25,7 @@
 #	include "SDL_keyboard.h"
 #endif
 #include "descent.h"
+#include "sdl_compat.h"
 #include "text.h"
 #include "menu.h"
 #include "vers_id.h"
@@ -171,7 +172,7 @@ class CDownload {
 		void Start (void) {
 			if (m_nState < 0) {
 				m_nState = 0;
-				m_thread = SDL_CreateThread (&CDownload::Download, NULL);
+				m_thread = D2CreateThread (&CDownload::Download, NULL);
 				}
 			}
 

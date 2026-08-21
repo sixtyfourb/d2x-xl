@@ -24,6 +24,8 @@
 #	include <SDL_net.h>
 #endif
 #include "descent.h"
+#include "sdl_compat.h"
+
 #include "network.h"
 #include "network_lib.h"
 #include "cfile.h"
@@ -197,7 +199,7 @@ SetDownloadFlag (i, 1);
 m_clients [i].nTimeout = SDL_GetTicks ();
 m_clients [i].nState = DL_CONNECT;
 m_clients [i].cf.File () = NULL;
-if (!(m_clients [i].thread = SDL_CreateThread (UploadThread, &i))) {
+if (!(m_clients [i].thread = D2CreateThread (UploadThread, &i))) {
 	RemoveClient (i);
 	return -1;
 	}

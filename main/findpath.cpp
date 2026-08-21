@@ -20,6 +20,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>	//	for memset ()
 
 #include "descent.h"
+#include "sdl_compat.h"
+
 #include "error.h"
 #include "segment.h"
 #include "segmath.h"
@@ -410,8 +412,8 @@ m_heap [1].Setup (m_nDestSeg, m_nStartSeg, m_scanInfo.m_bFlag, 1);
 if (gameStates.app.nThreads > 1) {
 	SDL_Thread* threads [2];
 	int32_t nThreadIds [2] = {0, 1};
-	threads [0] = SDL_CreateThread (ExpandSegmentMT, nThreadIds);
-	threads [1] = SDL_CreateThread (ExpandSegmentMT, nThreadIds + 1);
+	threads [0] = D2CreateThread (ExpandSegmentMT, nThreadIds);
+	threads [1] = D2CreateThread (ExpandSegmentMT, nThreadIds + 1);
 	SDL_WaitThread (threads [0], NULL);
 	SDL_WaitThread (threads [1], NULL);
 

@@ -19,6 +19,8 @@
 #endif
 
 #include "descent.h"
+#include "sdl_compat.h"
+
 #include "ipx.h"
 #include "byteswap.h"
 #include "timer.h"
@@ -583,7 +585,7 @@ if (!m_thread) {
 	m_toSend.Start ();
 	m_bUrgent = false;
 	m_bActive = true;
-	m_thread = SDL_CreateThread (NetworkThreadHandler, &m_nThreadId);
+	m_thread = D2CreateThread (NetworkThreadHandler, &m_nThreadId);
 	while (!Running ())
 		G3_SLEEP (0);
 	}

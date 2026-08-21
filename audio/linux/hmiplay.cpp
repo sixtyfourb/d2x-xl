@@ -31,6 +31,7 @@
 #include "u_mem.h"
 
 #include <SDL_thread.h>
+#include "sdl_compat.h"
 
 //#define WANT_AWE32 1
 
@@ -537,7 +538,7 @@ void send_ipc(char *message)
 				     IPC_CREAT | 0660);
 		snd= reinterpret_cast<struct msgbuf*> (new uint8_t [sizeof(long) + 32]);
 		snd->mType=1;
-		player_thread=SDL_CreateThread(play_hmi, NULL);
+		player_thread=D2CreateThread (play_hmi, NULL);
 //		player_pid = play_hmi();
 	}    
 	if (strlen(message) < 16)

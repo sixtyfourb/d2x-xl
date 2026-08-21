@@ -23,6 +23,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <time.h>
 
 #include "descent.h"
+#include "sdl_compat.h"
+
 #include "ogl_lib.h"
 #include "ogl_shader.h"
 #include "ogl_render.h"
@@ -1206,7 +1208,7 @@ void CGameLoop::Start (void)
 #if PHYSICS_IN_BACKGROUND
 m_bRunning = false;
 m_lock = SDL_CreateSemaphore (1);
-m_thread = SDL_CreateThread (GameThreadHandler, NULL);
+m_thread = D2CreateThread (GameThreadHandler, NULL);
 while (!m_bRunning)
 	G3_SLEEP (0);
 #endif

@@ -6,6 +6,8 @@
 #endif
 
 #include "descent.h"
+#include "sdl_compat.h"
+
 #include "error.h"
 #include "light.h"
 #include "dynlight.h"
@@ -202,7 +204,7 @@ for (int32_t i = 0; i < gameStates.app.nThreads; i++) {
 		tiRender.ti [i].bDone =
 		tiRender.ti [i].bExec = 0;
 		tiRender.ti [i].nId = i;
-		tiRender.ti [i].pThread = SDL_CreateThread (RenderThread, &tiRender.ti [i].nId);
+		tiRender.ti [i].pThread = D2CreateThread (RenderThread, &tiRender.ti [i].nId);
 		}
 	tiRender.semaphore = SDL_CreateMutex ();
 	}
@@ -275,7 +277,7 @@ if (gameStates.app.nThreads > 1) {
 	#if 1 //!USE_OPENMP
 	tiEffects.bDone = 0;
 	tiEffects.bExec = 0;
-	if	(!(tiEffects.pThread || (tiEffects.pThread = SDL_CreateThread (EffectsThread, NULL))))
+	if	(!(tiEffects.pThread || (tiEffects.pThread = D2CreateThread (EffectsThread, NULL))))
 		gameData.appData.bUseMultiThreading [rtEffects] = 0;
 	#endif
 	}

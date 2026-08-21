@@ -1,6 +1,8 @@
 #ifndef _NETWORK_THREAD_H
 #define _NETWORK_THREAD_H
 
+#include "sdl_compat.h"	// D2CreateThread
+
 //------------------------------------------------------------------------------
 
 class CNetworkClientInfo : public CNetworkAddress {
@@ -344,7 +346,7 @@ class CPlayerSynchronizer {
 
 	
 	void Setup (void) {
-		m_pThread = SDL_CreateThread (NetworkSyncThread, &m_nThreadId);
+		m_pThread = D2CreateThread (NetworkSyncThread, &m_nThreadId);
 		m_pSemaphore = SDL_CreateSemaphore (1);
 		}
 

@@ -21,6 +21,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <math.h>
 
 #include "descent.h"
+#include "sdl_compat.h"
+
 #include "error.h"
 #include "gamefont.h"
 #include "texmap.h"
@@ -438,13 +440,13 @@ if (!m_bInited) {
 		m_nThreadIds [i] = i;
 		m_lightObjects [i] = SDL_CreateSemaphore (0);
 #if PERSISTENT_THREADS
-		m_threads [i] = SDL_CreateThread (LightObjectsThread, m_nThreadIds + i);
+		m_threads [i] = D2CreateThread (LightObjectsThread, m_nThreadIds + i);
 #endif
 		}
 	}
 #if !PERSISTENT_THREADS
 for (int32_t i = 0; i < m_nRenderThreads; i++)
-	m_threads [i] = SDL_CreateThread (LightObjectsThread, m_nThreadIds + i);
+	m_threads [i] = D2CreateThread (LightObjectsThread, m_nThreadIds + i);
 #endif
 m_nRenderThreads = Min (gameData.renderData.mine.nObjRenderSegs, gameStates.app.nThreads);
 m_nActiveThreads = m_nRenderThreads;

@@ -11,6 +11,8 @@
 #include "mono.h"
 
 #include "descent.h"
+#include "sdl_compat.h"
+
 #include "text.h"
 #include "loadgeometry.h"
 #include "error.h"
@@ -1118,7 +1120,7 @@ for (i = 0; i < gameStates.app.nThreads; i++) {
 	ti [i].bDone = 0;
 	ti [i].done = SDL_CreateSemaphore (0);
 	ti [i].nId = i;
-	ti [i].pThread = SDL_CreateThread (threadFunc, &ti [i].nId);
+	ti [i].pThread = D2CreateThread (threadFunc, &ti [i].nId);
 	}
 #if 1
 for (i = 0; i < gameStates.app.nThreads; i++)

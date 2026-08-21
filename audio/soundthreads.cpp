@@ -12,6 +12,7 @@
 #include "soundthreads.h"
 #include "timeout.h"
 #include "config.h"
+#include "sdl_compat.h"
 
 CSoundThreadInfo tiSound;
 
@@ -94,7 +95,7 @@ void CreateSoundThread (void)
 if (!tiSound.pThread) {
 	memset (&tiSound, 0, sizeof (tiSound));
 	tiSound.nId = 0;
-	tiSound.pThread = SDL_CreateThread (SoundThread, &tiSound.nId);
+	tiSound.pThread = D2CreateThread (SoundThread, &tiSound.nId);
 	}
 #endif
 }
