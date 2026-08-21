@@ -2183,6 +2183,14 @@ if (!IsMultiGame) {
 					}
 				briefing.Run ("robot.tex", nLevel);
 				gameStates.menus.bHiresAvailable = hires_save;
+				// bHires and the font flag are derived from what was just put
+				// back, and nothing recomputes them: a briefing with low
+				// resolution robot movies otherwise leaves every menu for the
+				// rest of the session drawn in the low resolution fonts. On a
+				// phone that is the difference between readable and not.
+				gameStates.menus.bHires = gameStates.menus.bHiresAvailable;
+				gameStates.render.fonts.bHires =
+					gameStates.render.fonts.bHiresAvailable && gameStates.menus.bHires;
 				}
 			}
 		}

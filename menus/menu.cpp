@@ -555,6 +555,23 @@ backgroundManager.Activate (m_background);
 int32_t nOffsetSave = gameData.SetStereoOffsetType (STEREO_OFFSET_NONE);
 fontManager.PushScale ();
 fontManager.SetScale (fontManager.Scale (false) * GetScale ());
+#ifdef __ANDROID__
+	{	// Why menu text is the size it is: the base scale the menu inherits, the
+		// menu's own factor, and whether the hires fonts are in use - logged when
+		// any of them changes, to compare a menu before the game starts with one
+		// during play.
+		static float fLast = -1.0f;
+		static int32_t nLastHires = -1;
+		const float fBase = fontManager.Scale (false);
+
+	if ((fLast != fBase) || (nLastHires != gameStates.render.fonts.bHires)) {
+		fLast = fBase;
+		nLastHires = gameStates.render.fonts.bHires;
+		PrintLog (0, "menu font: base %.2f, menu %.2f, hires %d, game running %d\n",
+		          fBase, GetScale (), gameStates.render.fonts.bHires, gameStates.app.bGameRunning);
+		}
+	}
+#endif
 int32_t i = DrawTitle (m_props.pszTitle, TITLE_FONT, RGB_PAL (31, 31, 31), m_props.yOffs);
 DrawTitle (m_props.pszSubTitle, SUBTITLE_FONT, RGB_PAL (21, 21, 21), i);
 if (!m_bRedraw)

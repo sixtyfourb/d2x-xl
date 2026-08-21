@@ -718,6 +718,12 @@ if (MVE_rmPrepMovie (reinterpret_cast<void*> (pMovie ? &pMovie->m_cf: &cf), dx, 
 	return MOVIE_NOT_PLAYED;
 	}
 nFrame = 0;
+// Put back when the movie ends, below. Without that, one low resolution movie -
+// the briefing robots, say - leaves every menu for the rest of the session in the
+// low resolution fonts, which on a phone is the difference between readable and
+// not.
+	const int32_t nHiresFontsSave = gameStates.render.fonts.bHires;
+
 gameStates.render.fonts.bHires = gameStates.render.fonts.bHiresAvailable && bHires;
 ogl.SetRenderQuality (gameOpts->movies.nQuality ? 5 : 0);
 while ((result = MVE_rmStepMovie ()) == 0) {
@@ -752,6 +758,7 @@ else
 ogl.SetRenderQuality ();
 gameStates.video.nScreenMode = -1;  //force reset of screen mode
 //paletteManager.ResumeEffect ();
+gameStates.render.fonts.bHires = nHiresFontsSave;
 return (aborted ? MOVIE_ABORTED : MOVIE_PLAYED_FULL);
 }
 

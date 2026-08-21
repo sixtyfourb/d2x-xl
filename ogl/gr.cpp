@@ -542,7 +542,17 @@ if (!gameData.renderData.frame.Height () || (gameData.renderData.frame.Height ()
 //	Define screen pages for game mode
 // If we designate through screenFlags to use paging, then do so.
 gameData.renderData.frame.Setup (&gameData.renderData.screen);
+#ifdef __ANDROID__
+// From the real width, not the mode index. GrSetMode takes the screen size from
+// the display here, so the index still says whatever the profile saved - 1, for
+// 640x480 - and keying the hires fonts off it means the game draws its menus in
+// the low resolution fonts on a 2410 pixel screen. That is why the menus are
+// readable before a level starts and half the size once one has.
+gameStates.render.fonts.bHires = gameStates.render.fonts.bHiresAvailable &&
+                                 (gameStates.menus.bHires = (gameData.renderData.screen.Width () > 640));
+#else
 gameStates.render.fonts.bHires = gameStates.render.fonts.bHiresAvailable && (gameStates.menus.bHires = (gameStates.video.nDisplayMode > 1));
+#endif
 console.Resize (0, 0, gameData.renderData.screen.Width (), gameData.renderData.screen.Height () / 2);
 return 1;
 }
