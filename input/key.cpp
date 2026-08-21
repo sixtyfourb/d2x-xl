@@ -28,7 +28,56 @@
 #include "hudmsgs.h"
 #include "maths.h"
 
+// SDL2 renamed a batch of key symbols and dropped the SDLKey type. Define the
+// SDL 1.2 spellings the key table below is written in, rather than editing 17
+// table entries: #ifndef leaves SDL 1.2 untouched, where these already exist.
+
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+typedef SDL_Keycode SDLKey;
+#endif
+
+#ifndef SDLK_KP0
+#	define SDLK_KP0			SDLK_KP_0
+#	define SDLK_KP1			SDLK_KP_1
+#	define SDLK_KP2			SDLK_KP_2
+#	define SDLK_KP3			SDLK_KP_3
+#	define SDLK_KP4			SDLK_KP_4
+#	define SDLK_KP5			SDLK_KP_5
+#	define SDLK_KP6			SDLK_KP_6
+#	define SDLK_KP7			SDLK_KP_7
+#	define SDLK_KP8			SDLK_KP_8
+#	define SDLK_KP9			SDLK_KP_9
+#endif
+#ifndef SDLK_NUMLOCK
+#	define SDLK_NUMLOCK		SDLK_NUMLOCKCLEAR
+#endif
+#ifndef SDLK_SCROLLOCK
+#	define SDLK_SCROLLOCK	SDLK_SCROLLLOCK
+#endif
+#ifndef SDLK_PRINT
+#	define SDLK_PRINT		SDLK_PRINTSCREEN
+#endif
+// SDL 1.2 told the Windows key and the Command key apart; SDL2 reports both as
+// GUI keys, so "LWIN" and "LCMD" end up with the same key symbol. The table is
+// scanned in order, so the WIN entry wins and the CMD entry becomes dead - which
+// is the best that can be done when the platform no longer distinguishes them.
+#ifndef SDLK_LSUPER
+#	define SDLK_LSUPER		SDLK_LGUI
+#	define SDLK_RSUPER		SDLK_RGUI
+#endif
+#ifndef SDLK_LMETA
+#	define SDLK_LMETA		SDLK_LGUI
+#	define SDLK_RMETA		SDLK_RGUI
+#endif
+
 #define UNICODE_KEYS		0
+
+#if UNICODE_KEYS && SDL_VERSION_ATLEAST (2, 0, 0)
+// SDL2 removed SDL_EnableUNICODE and the unicode member of SDL_Keysym: typed
+// text arrives as SDL_TEXTINPUT events instead, which is a different shape of
+// input loop than the code below expects. Fail loudly rather than confusingly.
+#	error UNICODE_KEYS needs porting to SDL_TEXTINPUT events under SDL2.
+#endif
 
 #define KEY_BUFFER_SIZE 16
 
@@ -692,7 +741,7 @@ return (++n < KEY_BUFFER_SIZE) ? n : 0;
 
 int32_t KeyCheckChar (void)
 {
-event_poll (SDL_KEYDOWNMASK | SDL_KEYUPMASK);
+event_poll ();
 return (keyData.nKeyTail != keyData.nKeyHead);
 }
 
@@ -707,7 +756,7 @@ gameOpts->legacy.bInput = 1;
 
 if (!bInstalled)
 	KeyInit ();
-event_poll (SDL_KEYDOWNMASK | SDL_KEYUPMASK);
+event_poll ();
 if (keyData.nKeyTail != keyData.nKeyHead) {
 	key = keyData.keyBuffer [keyData.nKeyHead];
 	if ((key == KEY_CTRLED + KEY_ALTED + KEY_ENTER) || (key == KEY_ALTED + KEY_F4))
@@ -735,7 +784,7 @@ int32_t KeyPeekKey (void)
 {
 	int32_t key = 0;
 
-event_poll (SDL_KEYDOWNMASK | SDL_KEYUPMASK);
+event_poll ();
 if (keyData.nKeyTail != keyData.nKeyHead)
 	key = keyData.keyBuffer [keyData.nKeyHead];
 return key;

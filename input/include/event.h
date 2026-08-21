@@ -20,7 +20,9 @@
 #endif
 
 int32_t event_init();
-void event_poll(uint32_t mask);
+// The mask is ignored - event_poll dispatches every event it finds - and SDL2
+// has no event masks to pass, so callers may leave it out.
+void event_poll(uint32_t mask = 0);
 
 #ifdef GII_XWIN
 void init_gii_xwin(Display *disp,Window win);
