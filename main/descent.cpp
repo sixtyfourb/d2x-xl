@@ -862,12 +862,19 @@ int32_t Initialize (int32_t argc, char *argv[])
 gameData.timeData.xGameTotal = 0;
 gameData.appData.argC = argc;
 gameData.appData.argV = reinterpret_cast<char**>(argv);
+#if !defined (DXX_ANDROID_NO_SIGNAL_HANDLER)
 signal (SIGABRT, D2SignalHandler);
 signal (SIGFPE, D2SignalHandler);
 signal (SIGILL, D2SignalHandler);
 signal (SIGINT, D2SignalHandler);
 signal (SIGSEGV, D2SignalHandler);
 signal (SIGTERM, D2SignalHandler);
+#else
+// The handler catches the signal, logs "Memory access violation" with no stack
+// (its backtrace support is Windows-only) and carries on into the next fault.
+// Leaving the signal alone lets Android write a tombstone instead, which does
+// have a stack.
+#endif
 #ifdef WIN32
 LoadLibraryA("backtrace.dll");
 #endif

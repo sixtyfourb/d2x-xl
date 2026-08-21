@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "gl_android.h"
 #include <gl4esinit.h>
@@ -11,9 +12,8 @@
 
 //------------------------------------------------------------------------------
 
-// gl4es is built with NO_LOADER and NO_INIT_CONSTRUCTOR, so it neither finds
-// libGLES itself nor initialises on load: SDL2 owns the EGL context, and this
-// has to run once that context exists.
+// gl4es is built without its init constructor, because SDL owns the EGL context:
+// this has to run once that context exists, and before any GL call.
 
 void D2XLInitGL (void)
 {
