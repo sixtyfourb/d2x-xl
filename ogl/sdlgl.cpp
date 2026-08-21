@@ -257,6 +257,15 @@ if (!sdlGlContext) {
 		Error ("Could not create an OpenGL context: %s\n", SDL_GetError ());
 		return 0;
 		}
+#	ifdef __ANDROID__
+	// Before any GL call. gl4es is built without its init constructor because SDL
+	// owns the context, so until this runs it has no entry points to forward to
+	// and the first GL call walks into a null pointer - which is what happened
+	// here: this function ends by setting up the draw buffer and the GL state,
+	// long before the engine reaches the extension setup where glewInit used to
+	// be called.
+	D2XLInitGL ();
+#	endif
 	}
 PrintLog (-1);
 #else
