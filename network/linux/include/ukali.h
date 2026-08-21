@@ -8,6 +8,8 @@
 #ifndef __UKALI_H__
 #define __UKALI_H__
 
+#include "pstypes.h"	// ushort, which bionic does not define
+
 // 4213 is the port that KaliNix is listening on
 //
 //		char code; // 1 == open, 2 == close, 3 == data, 5 == GetMyAddr

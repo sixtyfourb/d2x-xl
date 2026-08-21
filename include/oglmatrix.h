@@ -3,7 +3,11 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "glew.h"
+#ifdef __ANDROID__
+#	include "gl_android.h"
+#else
+#	include "glew.h"
+#endif
 
 class COGLMatrix {
 	private:

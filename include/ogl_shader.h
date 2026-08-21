@@ -9,7 +9,11 @@
 #	include <stddef.h>
 #endif
 
-#include "glew.h"
+#ifdef __ANDROID__
+#	include "gl_android.h"
+#else
+#	include "glew.h"
+#endif
 #include "vecmat.h"
 #include "ogl_lib.h"
 #include "oglmatrix.h"

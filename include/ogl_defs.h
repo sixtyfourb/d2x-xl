@@ -29,7 +29,9 @@
 #	include <stddef.h>
 #endif
 
-#ifdef __macosx__
+#ifdef __ANDROID__
+#	include "gl_android.h"
+#elif defined (__macosx__)
 #	include "glew.h"
 #	include <OpenGL/gl.h>
 #	include <OpenGL/glu.h>

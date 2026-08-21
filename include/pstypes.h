@@ -22,6 +22,14 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include <stdint.h>
 
+#ifdef __ANDROID__
+// bionic does not carry the BSD short-hand integer types glibc provides, and the
+// Linux networking headers here are written in them.
+#	include <sys/types.h>
+typedef unsigned short ushort;
+typedef unsigned int uint;
+#endif
+
 #ifdef _WIN32
 # include <stdlib.h> // this is where minand max are defined
 #endif

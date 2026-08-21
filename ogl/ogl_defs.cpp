@@ -132,10 +132,18 @@ gameStates.render.bVSyncOk = 1;
 void COGL::SetupExtensions (void)
 {
 pszOglExtensions = reinterpret_cast<const char*> (glGetString (GL_EXTENSIONS));
+#ifdef __ANDROID__
+// gl4es stands in for both the driver and the extension loader here: it exports
+// the GL entry points itself, so there is nothing to look up, but it does have
+// to be told how to reach GLES and then initialised. This is the first code to
+// run with a live context, which is where that belongs.
+D2XLInitGL ();
+#else
 glewInit ();
 #if SDL_VERSION_ATLEAST(1,2,50) // sdl12compat uses framebuffers itself
 __glewBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)SDL_GL_GetProcAddress("glBindFramebuffer");
 __glewBindFramebufferEXT = (PFNGLBINDFRAMEBUFFEREXTPROC)SDL_GL_GetProcAddress("glBindFramebufferEXT");
+#endif
 #endif
 SetupMultiTexturing ();
 SetupShaders ();

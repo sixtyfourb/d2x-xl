@@ -333,8 +333,8 @@ return true;
 #include <string.h>
 #ifdef _WIN32
 #	include <intrin.h>
-#else
-#	include <cpuid.h>
+#elif !defined (__ANDROID__)
+#	include <cpuid.h>	// x86 only; see GetCPUCores below
 #endif
 
 typedef union {
@@ -348,7 +348,10 @@ typedef union {
 
 inline void CPUID (cpu_t& cpu, int infoType)
 {
-#ifdef _WIN32
+#ifdef __ANDROID__
+memset (&cpu, 0, sizeof (cpu));	// no CPUID on ARM; GetCPUCores does not use it
+(void) infoType;
+#elif defined (_WIN32)
 __cpuid (cpu.v, infoType);
 #else
 __get_cpuid (infoType, &cpu.regs.eax, &cpu.regs.ebx, &cpu.regs.ecx, &cpu.regs.edx);
@@ -359,6 +362,14 @@ __get_cpuid (infoType, &cpu.regs.eax, &cpu.regs.ebx, &cpu.regs.ecx, &cpu.regs.ed
 
 uint32_t GetCPUCores (void)
 {
+#ifdef __ANDROID__
+// The point of the CPUID dance below is to tell physical cores from logical
+// ones, because hyper threading hurts here. ARM has neither CPUID nor hyper
+// threading, so the count the system reports is the answer.
+int32_t nSysCores = SDL_GetCPUCount ();
+PrintLog (0, "\nGetCPUCores: %d CPUs reported.\n\n", nSysCores);
+return (nSysCores > 0) ? (uint32_t) nSysCores : 1;
+#else
 	cpu_t	cpu;
 
 CPUID (cpu, 0);
@@ -396,6 +407,7 @@ PrintLog (0, "\nGetCPUCores: CPU Id = '%s'. Found %d physical and %d logical CPU
 			 vendor.s, nCores, nLogical, bHyperThreads ? "on" : "off");
 
 return nCores / (bHyperThreads + 1);
+#endif
 }
 
 //------------------------------------------------------------------------------
