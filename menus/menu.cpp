@@ -1414,7 +1414,7 @@ if (int32_t (ToS ()) < 1)
 //if (gameStates.app.bGameRunning && !gameOpts->menus.nStyle)
 //	backgroundManager.LoadStars (true);
 SDL_ShowCursor (0);
-SDL_EnableKeyRepeat (60, 30);
+KeyEnableRepeat (60, 30);
 if (gameStates.menus.nInMenu >= 0)
 	gameStates.menus.nInMenu++;
 if (gameStates.app.bGameRunning && IsMultiGame)
@@ -1628,7 +1628,7 @@ if (gameStates.menus.nInMenu > 0)
 	gameStates.menus.nInMenu--;
 paletteManager.EnableEffect ();
 //paletteManager.StopEffect ();
-SDL_EnableKeyRepeat (0, 0);
+KeyEnableRepeat (0, 0);
 if (gameStates.app.bGameRunning && IsMultiGame)
 	MultiSendMsgQuit();
 

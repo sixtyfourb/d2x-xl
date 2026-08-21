@@ -27,6 +27,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // This installs the int9 vector and initializes the keyboard in buffered
 // ASCII mode. KeyClose simply undoes that.
 extern void KeyInit();
+void KeyEnableRepeat (int32_t nDelay, int32_t nInterval);	// SDL2 has no such call; see key.cpp
 extern void _CDECL_ KeyClose(void);
 
 //==========================================================================

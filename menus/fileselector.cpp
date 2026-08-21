@@ -344,7 +344,7 @@ mouse2State = omouse2State = 0;
 CMenu::DrawCloseBox (0, 0);
 SDL_ShowCursor (1);
 
-SDL_EnableKeyRepeat (60, 30);
+KeyEnableRepeat (60, 30);
 
 Register ();
 
@@ -552,7 +552,7 @@ gameStates.input.keys.bRepeat = bKeyRepeat;
 
 backgroundManager.Draw ();
 gameData.renderData.frame.Deactivate ();
-SDL_EnableKeyRepeat(0, 0);
+KeyEnableRepeat (0, 0);
 Unregister ();
 return exitValue;
 }

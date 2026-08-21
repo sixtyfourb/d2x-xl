@@ -544,8 +544,34 @@ return keyCode | flags;
 
 //------------------------------------------------------------------------------
 
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+static int32_t bKeyRepeat = 0;
+#endif
+
+// SDL 1.2 could turn key repeat on and off, and the menus do exactly that: on
+// while a menu is up, off again on the way out. SDL2 dropped the call and always
+// repeats, so the switch lives here and the handler drops the repeats nobody
+// asked for. Without that, held keys would repeat during play, where SDL 1.2
+// delivered a single press.
+
+void KeyEnableRepeat (int32_t nDelay, int32_t nInterval)
+{
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+bKeyRepeat = (nDelay != 0);
+(void) nInterval;	// SDL2 sets the rate itself
+#else
+SDL_EnableKeyRepeat (nDelay, nInterval);
+#endif
+}
+
+//------------------------------------------------------------------------------
+
 void KeyHandler (SDL_KeyboardEvent *event)
 {
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+if (event->repeat && !bKeyRepeat)
+	return;
+#endif
 	uint8_t			state;
 	int32_t			keyCode,
 				keyState = (event->state == SDL_PRESSED),

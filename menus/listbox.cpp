@@ -188,7 +188,7 @@ yClose = m_nTitleHeight - m_nOffset;
 CMenu::DrawCloseBox (/*xClose, yClose*/0, 0);
 SDL_ShowCursor (1);
 
-SDL_EnableKeyRepeat(60, 30);
+KeyEnableRepeat (60, 30);
 while (!m_bDone) {
 	nOldMouseState = nMouseState;
 	nMouseState = MouseButtonState (0);
@@ -390,7 +390,7 @@ FadeOut ();
 gameStates.input.keys.bRepeat = bKeyRepeat;
 backgroundManager.Draw ();
 gameData.renderData.frame.Deactivate ();
-SDL_EnableKeyRepeat(0, 0);
+KeyEnableRepeat (0, 0);
 return m_nChoice;
 }
 
