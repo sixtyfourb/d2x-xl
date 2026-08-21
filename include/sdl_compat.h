@@ -25,6 +25,10 @@
 #else
 
 #	define D2CreateThread(_fn, _data)	SDL_CreateThread (_fn, _data)
+
+// SDL2 took the index-based joystick name under a new name, and gave the old one
+// a different signature.
+#	define SDL_JoystickNameForIndex(_i)	SDL_JoystickName (_i)
 // Both arguments have to be literals here, which is all this is used for.
 #	define D2SetEnv(_name, _value)		SDL_putenv (const_cast<char*> (_name "=" _value))
 

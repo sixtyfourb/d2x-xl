@@ -357,6 +357,9 @@ class CThreadedObjectRenderer {
 		SDL_sem*		m_renderDone;
 		int32_t		m_nRenderThreads;
 		int32_t		m_nActiveThreads;
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+		bool			m_bQuit;	// SDL2 has no SDL_KillThread; they have to be asked
+#endif
 
 	public:
 		CThreadedObjectRenderer ();
@@ -396,6 +399,9 @@ Destroy ();
 void CThreadedObjectRenderer::Reset (void) 
 {
 ENTER (0, 0);
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+m_bQuit = false;
+#endif
 memset (m_threads, 0, sizeof (m_threads));
 memset (m_nThreadIds, 0, sizeof (m_nThreadIds));
 memset (m_lightObjects, 0, sizeof (m_lightObjects));
@@ -414,12 +420,28 @@ void CThreadedObjectRenderer::Destroy (void)
 {
 ENTER (0, 0);
 if (m_bInited) {
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+	// SDL2 cannot kill a thread, so ask each one to leave and wait for it. This
+	// has to happen before the semaphores they wait on are destroyed, which is
+	// why it is not simply folded into the loop below.
+	m_bQuit = true;
+	for (int32_t i = 0; i < gameStates.app.nThreads; i++)
+		if (m_lightObjects [i])
+			SDL_SemPost (m_lightObjects [i]);	// wake anything parked on its semaphore
+	for (int32_t i = 0; i < gameStates.app.nThreads; i++)
+		if (m_threads [i]) {
+			SDL_WaitThread (m_threads [i], NULL);
+			m_threads [i] = NULL;
+			}
+#endif
 	SDL_DestroyMutex (m_lightLock);
 	SDL_DestroySemaphore (m_lightDone);
 	SDL_DestroySemaphore (m_renderDone);
 	for (int32_t i = 0; i < gameStates.app.nThreads; i++) {
 		SDL_DestroySemaphore (m_lightObjects [i]);
+#if !SDL_VERSION_ATLEAST (2, 0, 0)
 		SDL_KillThread (m_threads [i]);
+#endif
 		}
 	Reset ();
 	}
@@ -470,6 +492,10 @@ ENTER (0, 0);
 #if PERSISTENT_THREADS
 for (;;) {
 	SDL_SemWait (m_lightObjects [nThread]);
+#	if SDL_VERSION_ATLEAST (2, 0, 0)
+	if (m_bQuit)		// woken by Destroy, not by work
+		break;
+#	endif
 #	if DBG
 	if (!m_nActiveThreads)
 		BRP;
