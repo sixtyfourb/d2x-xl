@@ -24,6 +24,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE EVE.  ALL RIGHTS RESERVED.
 
 #include "error.h"
 #include "descent.h"
+#include "sdlgl.h"
 #include "key.h"
 #include "gamefont.h"
 #include "iff.h"
@@ -986,8 +987,15 @@ void CControlsManager::DoOculusRift (void)
 HWND GetWindowHandle(void) {
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+// SDL2 asks which window, and moved the handle into a per-subsystem union.
+	if (!SDL_GetWindowWMInfo (SdlGlGetWindow (), &info))
+		return NULL;
+	return info.info.win.window;
+#else
 	SDL_GetWMInfo(&info);
 	return info.window;
+#endif
 }
 
 int32_t CControlsManager::ReadTrackIR (void)

@@ -228,10 +228,43 @@ displayModeInfo [i].bAvailable = 1;
 
 void CreateDisplayModeInfoTable (void)
 {
-	SDL_Rect**	displayModes, * pDisplayMode;
+#if !SDL_VERSION_ATLEAST (2, 0, 0)
+	SDL_Rect**	displayModes;
+#endif
+	SDL_Rect*	pDisplayMode;
 	int32_t		h, i;
 	bool			bDefault;
 
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+// SDL2 enumerates a display's modes by index rather than handing back a list,
+// and lists one per pixel format and refresh rate - so several entries share a
+// resolution. Modes come back largest first, which makes dropping a repeat of
+// the previous entry enough to reduce them to distinct resolutions.
+	int32_t nModes = SDL_GetNumDisplayModes (0);
+
+h = 0;
+pDisplayMode = (nModes > 0) ? NEW SDL_Rect [nModes] : NULL;
+if (pDisplayMode) {
+	for (i = 0; i < nModes; i++) {
+		SDL_DisplayMode mode;
+		if (SDL_GetDisplayMode (0, i, &mode) != 0)
+			continue;
+		if (h && (pDisplayMode [h - 1].w == mode.w) && (pDisplayMode [h - 1].h == mode.h))
+			continue;
+		pDisplayMode [h].x =
+		pDisplayMode [h].y = 0;
+		pDisplayMode [h].w = mode.w;
+		pDisplayMode [h].h = mode.h;
+		h++;
+		}
+	}
+if ((bDefault = (h == 0))) {
+	if (pDisplayMode)
+		delete[] pDisplayMode;
+	pDisplayMode = defaultDisplayModes;
+	h = sizeofa (defaultDisplayModes);
+	}
+#else
 displayModes = SDL_ListModes (NULL, SDL_FULLSCREEN | SDL_HWSURFACE);
 if ((bDefault = (displayModes == (SDL_Rect**) -1))) {
 	pDisplayMode = defaultDisplayModes;
@@ -244,12 +277,17 @@ else {
 	for (i = 0; i < h; i++)
 		pDisplayMode [i] = *displayModes [i];
 	}
+#endif
 displayModeInfo.Create (h + 1, "displayModeInfo");
 displayModeInfo.Clear ();
 for (i = 0; i < h; i++) {
 	CreateDisplayModeInfo (i, pDisplayMode [i].w, pDisplayMode [i].h, 1);
 	}
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+if (!bDefault)
+#else
 if (!bDefault && (displayModes != (SDL_Rect**) -1))
+#endif
 	delete[] pDisplayMode;
 displayModeInfo.SortAscending (0, h - 1);
 }
