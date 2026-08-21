@@ -1,6 +1,8 @@
 #ifndef _SDLGL_H
 #define _SDLGL_H
 
+#include "sdl_compat.h"	// SDL_Window, and the version check below
+
 void InitGammaRamp (void);
 int32_t SdlGlSetBrightnessInternal (void);
 int32_t SdlGlVideoModeOK (int32_t w, int32_t h);

@@ -49,6 +49,8 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #endif
 
 #include "descent.h"
+#include "sdl_compat.h"
+#include "sdlgl.h"
 #include "u_mem.h"
 #include "strutil.h"
 #include "key.h"
@@ -187,11 +189,42 @@ if (++nErrors > 4)
 
 // ----------------------------------------------------------------------------
 
+// The window title and the mouse grab belonged to the video subsystem in SDL 1.2
+// and belong to a window in SDL2.
+
+static void D2SetWindowTitle (const char* pszTitle)
+{
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+// SDL2 has no separate icon caption, so the second argument SDL 1.2 took here
+// is simply gone.
+SDL_Window* pWindow = SdlGlGetWindow ();
+if (pWindow)
+	SDL_SetWindowTitle (pWindow, *pszTitle ? pszTitle : "D2X-XL");
+#else
+SDL_WM_SetCaption (pszTitle, "D2X-XL");
+#endif
+}
+
+// ----------------------------------------------------------------------------
+
+static void D2GrabInput (int32_t bGrab)
+{
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+SDL_Window* pWindow = SdlGlGetWindow ();
+if (pWindow)
+	SDL_SetWindowGrab (pWindow, bGrab ? SDL_TRUE : SDL_FALSE);
+#else
+SDL_WM_GrabInput (bGrab ? SDL_GRAB_ON : SDL_GRAB_OFF);
+#endif
+}
+
+// ----------------------------------------------------------------------------
+
 void D2SetCaption (void)
 {
 #if defined(__linux__)
 
-SDL_WM_SetCaption ("", "D2X-XL");
+D2SetWindowTitle ("");
 
 #else
 
@@ -233,7 +266,7 @@ if (*missionManager.szCurrentLevel) {
 	}
 
 #	endif
-SDL_WM_SetCaption (szCaption, "D2X-XL");
+D2SetWindowTitle (szCaption);
 #endif
 }
 
@@ -500,7 +533,7 @@ void LoadHoardData (void)
 void GrabMouse (int32_t bGrab, int32_t bForce)
 {
 //if (gameStates.input.bGrabMouse && (bForce || gameStates.app.bGameRunning))
-SDL_WM_GrabInput (((bGrab && gameStates.input.bGrabMouse) || ogl.m_states.bFullScreen) ? SDL_GRAB_ON : SDL_GRAB_OFF);
+D2GrabInput ((bGrab && gameStates.input.bGrabMouse) || ogl.m_states.bFullScreen);
 }
 
 // ----------------------------------------------------------------------------
@@ -568,13 +601,13 @@ if (gameStates.app.bMultiThreaded) {
 		gameData.threadData.vertColor.info [i].bExec =
 		gameData.threadData.vertColor.info [i].bQuit = 0;
 		gameData.threadData.vertColor.info [i].nId = i;
-		gameData.threadData.vertColor.info [i].pThread = SDL_CreateThread (VertexColorThread, &gameData.threadData.vertColor.info [i].nId);
+		gameData.threadData.vertColor.info [i].pThread = D2CreateThread (VertexColorThread, &gameData.threadData.vertColor.info [i].nId);
 #endif
 #if MULTI_THREADED_SHADOWS
 		gameData.threadData.clipDist.info [i].done = SDL_CreateSemaphore (0);
 		gameData.threadData.clipDist.info [i].exec = SDL_CreateSemaphore (0);
 		gameData.threadData.clipDist.info [i].nId = i;
-		gameData.threadData.clipDist.info [i].pThread = SDL_CreateThread (ClipDistThread, &gameData.threadData.clipDist.info [i].nId);
+		gameData.threadData.clipDist.info [i].pThread = D2CreateThread (ClipDistThread, &gameData.threadData.clipDist.info [i].nId);
 #endif
 		}
 	}
@@ -841,7 +874,7 @@ LoadLibraryA("backtrace.dll");
 #if 0 //def _WIN32
 SDL_SetSpecialKeyHandling (0);
 #endif
-SDL_putenv (const_cast<char*>("SDL_DISABLE_LOCK_KEYS=1"));
+D2SetEnv ("SDL_DISABLE_LOCK_KEYS", "1");
 hogFileManager.Init ("", "");
 CObject::InitTables ();
 InitGameStates ();
