@@ -26,6 +26,53 @@
 
 CRBA rba;
 
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+
+//------------------------------------------------------------------------------
+// SDL2 dropped CD audio entirely - no drive enumeration, no track playback - and
+// nothing replaced it, so redbook audio is simply unavailable. Enabled() reports
+// that, which is what the callers check before asking for a track, and the rest
+// answer as they would with no disc in the drive.
+
+CRBA::CRBA () : m_cdInfo (NULL), m_bInitialized (0) {}
+
+CRBA::~CRBA () {}
+
+void CRBA::Destroy (void) {}
+
+void CRBA::Init (void) { m_bInitialized = 0; }
+
+int32_t CRBA::Enabled (void) { return 0; }
+
+void CRBA::RegisterCD (void) {}
+
+int32_t CRBA::PlayTrack (int32_t a) { (void) a; return 0; }
+
+void _CDECL_ CRBA::Stop (void) {}
+
+void CRBA::SetVolume (int32_t volume) { (void) volume; }
+
+void CRBA::Pause (void) {}
+
+int32_t CRBA::Resume (void) { return 0; }
+
+int32_t CRBA::GetNumberOfTracks (void) { return 0; }
+
+int32_t CRBA::PlayTracks (int32_t first, int32_t last) { (void) first; (void) last; return 0; }
+
+int32_t CRBA::GetTrackNum (void) { return 0; }
+
+int32_t CRBA::PeekPlayStatus (void) { return 0; }
+
+int32_t CD_blast_mixer (void) { return 0; }
+
+int32_t CRBA::cddb_sum (int32_t n) { (void) n; return 0; }
+
+uint32_t CRBA::GetDiscID (void) { return 0; }
+
+#else
+
+
 //------------------------------------------------------------------------------
 
 CRBA::CRBA ()
@@ -267,6 +314,8 @@ while (i < m_cdInfo->numtracks) {
 t = (m_cdInfo->track [m_cdInfo->numtracks].offset / CD_FPS) - (m_cdInfo->track [0].offset / CD_FPS);
 return (((n % 0xff) << 24) | (t << 8) | m_cdInfo->numtracks);
 }
+
+#endif // SDL_VERSION_ATLEAST (2, 0, 0)
 
 //------------------------------------------------------------------------------
 //eof

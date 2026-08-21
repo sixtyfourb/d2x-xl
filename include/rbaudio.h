@@ -31,6 +31,12 @@ typedef struct RBACHANNELCTL {
 	uint32_t out3in, out3vol;
 } RBACHANNELCTL;
 
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+// SDL2 removed the CD audio API, SDL_CD included. The member is kept so the
+// class keeps its shape; rbaudio.cpp stubs everything that would have used it.
+typedef void SDL_CD;
+#endif
+
 class CRBA {
 	private:
 		SDL_CD*	m_cdInfo;
