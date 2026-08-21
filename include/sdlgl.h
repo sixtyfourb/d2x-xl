@@ -10,5 +10,8 @@ void SdlGlDestroyWindow (void);
 void SdlGlDoFullScreenInternal (int32_t bForce);
 void SdlGlSwapBuffersInternal (void);
 void SdlGlClose (void);
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+SDL_Window* SdlGlGetWindow (void);	// the window owns input, gamma and the swap in SDL2
+#endif
 
 #endif //_SDLGL_H
