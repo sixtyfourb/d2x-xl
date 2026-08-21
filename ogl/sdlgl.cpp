@@ -177,6 +177,15 @@ if (0 < (t = FindArg ("-gl_depth")) && appConfig [t+1]) {
 	SdlGlSetAttribute (NULL, "SDL_GL_STENCIL_SIZE", SDL_GL_STENCIL_SIZE, 8);
 	}
 SdlGlSetAttribute (NULL, "SDL_GL_DOUBLEBUFFER", SDL_GL_DOUBLEBUFFER, 1);
+#if SDL_VERSION_ATLEAST (2, 0, 0) && defined (__ANDROID__)
+// Ask for GLES 2 explicitly. Nothing here asked for a context version at all,
+// and gl4es needs an ES 2 context to compile the shaders it emulates the fixed
+// pipeline with - without one glCreateShader returns 0 and every compile fails
+// with an empty error log, which is exactly what happened.
+SdlGlSetAttribute (NULL, "SDL_GL_CONTEXT_PROFILE_MASK", SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+SdlGlSetAttribute (NULL, "SDL_GL_CONTEXT_MAJOR_VERSION", SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+SdlGlSetAttribute (NULL, "SDL_GL_CONTEXT_MINOR_VERSION", SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
 if (ogl.m_features.bQuadBuffers/*.Apply ()*/)
 	SdlGlSetAttribute (NULL, "SDL_GL_STEREO", SDL_GL_STEREO, 1);
 if (ogl.m_states.bFSAA) {
