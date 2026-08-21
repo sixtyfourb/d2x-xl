@@ -21,6 +21,9 @@
 # endif
 #endif
 
+#include <dlfcn.h>
+#include <EGL/egl.h>
+
 #include "descent.h"
 #include "ogl_defs.h"
 #include "ogl_lib.h"
@@ -274,6 +277,46 @@ if (!sdlGlContext) {
 	// long before the engine reaches the extension setup where glewInit used to
 	// be called.
 	D2XLInitGL ();
+
+	// And bind our context again. gl4es probes the hardware by creating a pbuffer
+	// context of its own, making it current and destroying it, without putting
+	// back what was there - so on return nothing is current, and every GL call
+	// quietly does nothing: glCreateShader hands back 0 and glGetError reports no
+	// error at all, which is what made this look like missing shader support.
+	// Unbind first: SDL remembers which context it made current and will skip the
+	// work if asked for the one it already believes is bound. gl4es dropped the
+	// binding behind its back, so without the detour SDL does nothing, EGL has no
+	// current context, and every GL call from here on quietly does nothing at all.
+	SDL_GL_MakeCurrent (sdlWindow, NULL);
+	if (SDL_GL_MakeCurrent (sdlWindow, sdlGlContext) < 0)
+		PrintLog (0, "could not make the GL context current again: %s\n", SDL_GetError ());
+
+	{	// What the engine will actually be drawing into, measured here rather than
+		// inferred: a shader object that comes back 0 with no error means the calls
+		// are going nowhere.
+		int32_t nProfile = 0, nMajor = 0;
+		GLuint shader;
+
+		SDL_GL_GetAttribute (SDL_GL_CONTEXT_PROFILE_MASK, &nProfile);
+		SDL_GL_GetAttribute (SDL_GL_CONTEXT_MAJOR_VERSION, &nMajor);
+		shader = glCreateShader (GL_VERTEX_SHADER);
+
+		// The same call again, but taken straight from the driver rather than
+		// through gl4es, plus what EGL thinks is current. gl4es returning 0 here
+		// means the driver returned 0, and a driver does that when nothing is
+		// current - so ask EGL directly rather than infer it.
+		GLuint (*pfnRealCreateShader) (GLenum) = NULL;
+		void* hGles = dlopen ("libGLESv2.so", RTLD_LOCAL | RTLD_NOW);
+		if (hGles)
+			pfnRealCreateShader = (GLuint (*) (GLenum)) dlsym (hGles, "glCreateShader");
+
+		PrintLog (0, "context: profile %d, major %d, GL_VERSION '%s', gl4es shader %u, driver shader %u, EGL ctx %p, err 0x%x\n",
+		          nProfile, nMajor, (const char*) glGetString (GL_VERSION), shader,
+		          pfnRealCreateShader ? pfnRealCreateShader (GL_VERTEX_SHADER) : 0,
+		          (void*) eglGetCurrentContext (), glGetError ());
+		if (shader)
+			glDeleteShader (shader);
+	}
 #	endif
 	}
 PrintLog (-1);

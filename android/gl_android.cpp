@@ -28,25 +28,19 @@ bInitialized = true;
 // why. Temporary, while this engine is being brought up.
 setenv ("LIBGL_LOGSHADERERROR", "1", 1);
 
+// Turn off gl4es's "unbind the FBO if a bound texture is also sampled"
+// workaround. It defaults on for ARM and Imagination GPUs only - so this is a
+// device-specific path, off on the Adreno parts gl4es is usually run against -
+// and it dereferences glstate->fbo.current_fb, which gl4es itself sets to NULL
+// when the bound framebuffer is deleted (framebuffers.c:157). The engine deletes
+// one while showing the title movie, and the next draw crashes.
+setenv ("LIBGL_FBOUNBIND", "0", 1);
+
 // No set_getprocaddress here on purpose: gl4es loads libGLESv2 itself. Handing
 // it SDL_GL_GetProcAddress instead looks right and is not - that is
 // eglGetProcAddress on Android, which returns NULL for core GLES functions.
 initialize_gl4es ();
 
-// Does this context support shaders at all? gl4es emulates the fixed pipeline
-// with them, and its failure message carries an empty driver log, which cannot
-// tell "the GLSL was rejected" from "there is no shader support here".
-	{
-	const GLuint shader = glCreateShader (GL_VERTEX_SHADER);
-	const char* pszVersion = (const char*) glGetString (GL_VERSION);
-	const char* pszShading = (const char*) glGetString (GL_SHADING_LANGUAGE_VERSION);
-
-	SDL_Log ("gl4es up: GL_VERSION '%s', GLSL '%s', glCreateShader -> %u, err 0x%x",
-	         pszVersion ? pszVersion : "(null)", pszShading ? pszShading : "(null)",
-	         shader, glGetError ());
-	if (shader)
-		glDeleteShader (shader);
-	}
 }
 
 //------------------------------------------------------------------------------
