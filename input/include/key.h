@@ -17,10 +17,15 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "pstypes.h"
 #include "fix.h"
 
-#ifdef __macosx__
-# include <SDL/SDL_keysym.h>
-#else
-# include <SDL_keysym.h>
+#include "sdl_compat.h"	// brings in SDL, so the version check below works
+
+#if !SDL_VERSION_ATLEAST (2, 0, 0)
+// SDL2 folded the key symbols into SDL_keycode.h, which SDL.h includes itself.
+# ifdef __macosx__
+#  include <SDL/SDL_keysym.h>
+# else
+#  include <SDL_keysym.h>
+# endif
 #endif
 
 //==========================================================================

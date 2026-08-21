@@ -2,22 +2,33 @@
 #include <SDL.h>
 #include "rwops.h"
 
-static int rwops_seek(SDL_RWops* rw, int offset, int whence)
+// SDL2 widened the RWops callbacks: seek takes and returns a 64-bit offset, and
+// read and write count in size_t. The bodies are unchanged - CFile's own types
+// are wider than SDL 1.2's int anyway - so only the signatures move.
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+typedef Sint64 rwops_off_t;
+typedef size_t rwops_size_t;
+#else
+typedef int rwops_off_t;
+typedef int rwops_size_t;
+#endif
+
+static rwops_off_t rwops_seek(SDL_RWops* rw, rwops_off_t offset, int whence)
 {
     CFile* cf = (CFile*)rw->hidden.unknown.data1;
-    return (int)cf->Seek (offset, whence) == -1 ? -1 : cf->Tell ();
+    return (rwops_off_t) cf->Seek (offset, whence) == -1 ? -1 : cf->Tell ();
 }
 
-static int rwops_read(SDL_RWops *rw, void *ptr, int size, int maxnum)
+static rwops_size_t rwops_read(SDL_RWops *rw, void *ptr, rwops_size_t size, rwops_size_t maxnum)
 {
     CFile* cf = (CFile*)rw->hidden.unknown.data1;
-    return (int)cf->Read (ptr, size, maxnum, 0, 1);
+    return (rwops_size_t) cf->Read (ptr, size, maxnum, 0, 1);
 }
 
-static int rwops_write(SDL_RWops *rw, const void *ptr, int size, int num)
+static rwops_size_t rwops_write(SDL_RWops *rw, const void *ptr, rwops_size_t size, rwops_size_t num)
 {
     CFile* cf = (CFile*)rw->hidden.unknown.data1;
-    return (int)cf->Write (ptr, size, num);
+    return (rwops_size_t) cf->Write (ptr, size, num);
 }
 
 static int rwops_close(SDL_RWops *rw)

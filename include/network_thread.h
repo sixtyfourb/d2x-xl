@@ -352,8 +352,14 @@ class CPlayerSynchronizer {
 
 
 	void Destroy (void) {
-		if (m_pThread) 
+		if (m_pThread)
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+			// SDL2 cannot kill a thread. NetworkSyncThread's body is inside
+			// #if 0, so it has already returned and this joins immediately.
+			SDL_WaitThread (m_pThread, NULL);
+#else
 			SDL_KillThread (m_pThread);
+#endif
 		if (m_pSemaphore)
 			SDL_DestroySemaphore (m_pSemaphore);
 		m_pThread = NULL;

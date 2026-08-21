@@ -1062,7 +1062,11 @@ return nError;
 
 void COGL::SwapInterval (int32_t nInterval)
 {
-#ifdef WIN32
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+// SDL2 owns the context and has a portable call for this; the WGL and GLX paths
+// below reach past SDL, which only worked because SDL 1.2 let them.
+SDL_GL_SetSwapInterval (nInterval);
+#elif defined (WIN32)
 	wglSwapIntervalEXT (nInterval);
 #else
 	glXSwapIntervalEXT (glXGetCurrentDisplay (), glXGetCurrentDrawable (), nInterval);

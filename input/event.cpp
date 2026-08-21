@@ -40,7 +40,16 @@ int32_t PollEvent (SDL_Event *event, uint32_t mask)
 {
 	SDL_PumpEvents();
 	/* We can't return -1, just return 0 (no event) on error */
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+	/* SDL2 filters by a range of event types rather than a mask, and there is no
+	 * mapping from one to the other, so this takes whatever is next. Nothing
+	 * calls this function, so no filtering behaviour is lost; a caller that
+	 * wanted a particular event would need to pass the range instead. */
+	(void) mask;
+	return (SDL_PeepEvents (event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) > 0);
+#else
 	return (SDL_PeepEvents(event, 1, SDL_GETEVENT, mask) > 0);
+#endif
 }
 
 

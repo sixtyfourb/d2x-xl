@@ -652,19 +652,28 @@ if (nBpp == 1) {
 	uint8_t *src = (uint8_t*)pImage->pixels;
 	uint32_t *dst = (uint32_t*)m_pBm->Buffer ();
 	int32_t size = pImage->w * pImage->h;
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+	// SDL2 took the colour key off the surface flags and out of the pixel format:
+	// ask for it instead, where a zero return means the surface has one.
+	Uint32 colorKey = 0;
+	const bool bColorKey = (SDL_GetColorKey (pImage, &colorKey) == 0);
+#else
+	const bool bColorKey = (pImage->flags & SDL_SRCCOLORKEY) != 0;
+	const Uint32 colorKey = pFmt->colorkey;
+#endif
 	if (pFmt->palette) {
 		uint32_t pal32[256];
 		int32_t n = pFmt->palette->ncolors;
 		SDL_Color* c = pFmt->palette->colors;
 		for (int32_t i = 0; i < n; i++, c++)
 			pal32[i] = 0xff000000 | (c->b << 16) | (c->g << 8) | c->r;
-		if (pImage->flags & SDL_SRCCOLORKEY)
-			pal32[pFmt->colorkey] = 0;
+		if (bColorKey)
+			pal32[colorKey] = 0;
 		while (size--)
 			*dst++ = pal32[*src++];
 		}
-	else if (pImage->flags & SDL_SRCCOLORKEY) {
-		uint8_t ckey = pFmt->colorkey;
+	else if (bColorKey) {
+		uint8_t ckey = (uint8_t) colorKey;
 		while (size--) {
 			uint8_t c = *src++;
 			*dst++ = c == ckey ? 0 : 0xff000000 | c * 0x010101;
