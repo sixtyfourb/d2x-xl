@@ -551,11 +551,24 @@ int32_t t = gameData.renderData.screen.Height ();
 if (!gameOpts->render.cameras.bHires)
 	t >>= gameStates.render.cameras.bActive;
 CViewport vp = CViewport (x, y, w, h, t);
+#ifdef __ANDROID__
+// Apply it every time rather than trusting the cache. The cache assumes nothing
+// else touches the GL viewport, and the DBG block below exists because that
+// assumption does not always hold - it re-reads GL_VIEWPORT and corrects the
+// cache when it has drifted. Here it drifts in a way you can see: leave a menu
+// and the game carries on drawing inside the little box the menu had, because
+// the viewport the engine thinks is current is the one it never re-applied.
+// A glViewport per call costs nothing next to that.
+m_states.viewport [1] = m_states.viewport [0];
+m_states.viewport [0] = vp;
+m_states.viewport [0].Apply ();
+#else
 if (m_states.viewport [0] != vp) {
 	m_states.viewport [1] = m_states.viewport [0];
 	m_states.viewport [0] = vp;
 	m_states.viewport [0].Apply ();
 	}
+#endif
 #if DBG
 else {
 	int32_t v [4];
