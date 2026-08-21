@@ -641,8 +641,12 @@ if (!gameStates.render.fonts.bInstalled) {
 		m_gameFonts [i] = Load (gameFontFilenames [i]);
 	// load hires fonts
 	for (i = 1; i < MAX_FONTS; i += 2)
-		if (!(m_gameFonts [i] = Load (gameFontFilenames [i])))
+		if (!(m_gameFonts [i] = Load (gameFontFilenames [i]))) {
 			gameStates.render.fonts.bHiresAvailable = 0;
+			PrintLog (0, "hires font '%s' did not load - menus will use the low resolution fonts\n",
+			          gameFontFilenames [i]);
+			}
+	PrintLog (0, "hires fonts %s\n", gameStates.render.fonts.bHiresAvailable ? "available" : "NOT available");
 	}
 }
 

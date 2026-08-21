@@ -481,7 +481,17 @@ return (b == 1.0f) ? TXT_STANDARD : (b < 1.0f) ? TXT_LOW : TXT_HIGH;
 void CPaletteManager::Init (void)
 {
 memset (&m_data, 0, sizeof (m_data));
+#ifdef __ANDROID__
+// Brightness reaches the renderer two ways: the lightmap shaders, which are off
+// here, and gameData.renderData.fBrightness, which scales the vertex lighting
+// this platform draws with (see CPaletteManager::Brightness and
+// render/rendersetup.cpp). "Standard" is a factor of 1.0, and without lightmaps
+// or per-pixel light the mines are then too dark to fly. Start at 2.0; the
+// brightness slider still works from there.
+SetGamma (7);
+#else
 SetGamma (3); // standard brightness
+#endif
 m_save.Create (10, "CPaletteManager::m_save");
 }
 

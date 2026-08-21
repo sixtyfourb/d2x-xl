@@ -1820,6 +1820,15 @@ gameStates.render.SetCartoonStyle (gameOpts->render.bCartoonize);
 gameStates.render.nLightingMethod = gameStates.app.bNostalgia ? 0 : gameOpts->render.nLightingMethod;
 if ((gameOpts->render.nLightingMethod > 1) && !ogl.m_features.bShaders)
 	gameOpts->render.nLightingMethod = 1;
+#ifdef __ANDROID__
+// Shaders are off here (see COGL::SetupShaders), which rules out the per-pixel
+// methods and leaves lightmaps unavailable - and the profile default, method 0,
+// then draws the mine almost black. Per-vertex lighting is the brightest path
+// that works without shaders, and the check above already treats it as the
+// fallback when they are missing.
+gameOpts->render.nLightingMethod = 1;
+gameStates.render.nLightingMethod = 1;
+#endif
 if (gameStates.render.nLightingMethod == 2)
 	gameStates.render.bPerPixelLighting = 2;
 else if ((gameStates.render.nLightingMethod == 1) && gameOpts->render.bUseLightmaps && ogl.m_features.bShaders)

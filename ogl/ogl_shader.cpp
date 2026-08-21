@@ -503,7 +503,17 @@ shaderManager.Setup ();
 void COGL::SetupShaders (void)
 {
 PrintLog (1, "Checking shaders ...\n");
+#ifdef __ANDROID__
+// gl4es advertises GL_ARB_shading_language_100 and GL_ARB_shader_objects, and it
+// does emulate GL 2.1 - but its shader converter does not rewrite everything
+// this engine's shaders use. sampler2DShadow is a reserved word in GLSL ES,
+// gl_TexCoord and ftransform() do not exist there, and the programs that use
+// them - lighting, fog, shadows - fail to compile, leaving the level drawn with
+// nothing. The fixed pipeline gl4es emulates works, so take that path.
+ogl.m_features.bShaders.Available (0);
+#else
 ogl.m_features.bShaders.Available (gameOpts->render.bUseShaders);
+#endif
 ogl.m_features.bShaders = 0;
 if (!ogl.m_features.bShaders.Available ())
 	PrintLog (0, "Shaders have been disabled in d2x.ini\n");
