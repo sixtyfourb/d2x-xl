@@ -44,7 +44,12 @@ int FileFindFirst (const char *pszFilter, FILEFINDSTRUCT *ffsP, int nFlags)
 {
 	char szFilter [FILENAME_LEN];
 	int	i, j;
-#ifdef __macosx__
+#if defined(__macosx__) || defined(__ANDROID__)
+  // Match without regard to case where the filesystem does not keep it either.
+  // Android's external storage is case insensitive, as is the storage framework
+  // that stands in for it, and game data copied from a CD is upper case - so a
+  // search for descent2.hog has to find DESCENT2.HOG or the game finds nothing
+  // and reports every file missing.
   const int flags = REG_EXTENDED | REG_NOSUB | REG_ICASE;
 #else
   const int flags = REG_EXTENDED | REG_NOSUB;
