@@ -101,6 +101,13 @@ int32_t IPXGeneralPacketReady (ipx_socket_t *s)
 	fd_set set;
 	struct timeval tv;
 
+// A socket that was never opened carries fd -1, and FD_SET on a negative
+// descriptor is undefined - bionic's FORTIFY aborts the process for it, which
+// took the game down on the way into the multiplayer menu, where NetworkInit
+// flushes the socket before one has been opened.
+if (!s || (s->fd < 0))
+	return 0;
+
 FD_ZERO (&set);
 FD_SET (s->fd, &set);
 tv.tv_sec = tv.tv_usec = 0;

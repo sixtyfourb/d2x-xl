@@ -1245,6 +1245,10 @@ int32_t UDPPacketReady (ipx_socket_t *s)
 {
 	u_long nAvailBytes = 0;
 
+// Same reason as IPXGeneralPacketReady: an unopened socket has fd -1.
+if (!s || (s->fd < 0))
+	return 0;
+
 #ifdef _WIN32
 return !ioctlsocket (s->fd, FIONREAD, &nAvailBytes) && (nAvailBytes > 0);
 #else
