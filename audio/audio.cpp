@@ -27,6 +27,33 @@
 //end changes by adb
 #define SOUND_BUFFER_SIZE (512)
 
+#ifdef __ANDROID__
+/*
+ * The launcher can name the audio buffer, and on Android it needs to: 512
+ * samples is far too short for this platform's audio path, the callback cannot
+ * keep up and the underruns come out as a steady crackle. The framework already
+ * carries the setting - NativeLib.audioOverride puts it in these globals - it
+ * was simply that nothing in this engine read them.
+ *
+ * Zero means "not set", so the engine's own choice still stands.
+ */
+extern "C" int AUDIO_OVERRIDE_FREQ;
+extern "C" int AUDIO_OVERRIDE_SAMPLES;
+
+static inline int AudioBufferSize (int fallback)
+{
+	return AUDIO_OVERRIDE_SAMPLES > 0 ? AUDIO_OVERRIDE_SAMPLES : fallback;
+}
+
+static inline int AudioSampleRate (int fallback)
+{
+	return AUDIO_OVERRIDE_FREQ > 0 ? AUDIO_OVERRIDE_FREQ : fallback;
+}
+#else
+static inline int AudioBufferSize (int fallback) { return fallback; }
+static inline int AudioSampleRate (int fallback) { return fallback; }
+#endif
+
 /* This table is used to add two sound values together and pin
  * the value to avoid overflow.  (used with permission from ARDI)
  * DPH: Taken from SDL/src/SDL_mixer.c.
@@ -836,9 +863,9 @@ if (gameOpts->sound.bUseSDLMixer) {
 	else 
 #endif
 	if (gameOpts->UseHiresSound ())
-		h = Mix_OpenAudio (int32_t ((gameOpts->sound.audioSampleRate = SAMPLE_RATE_44K) / fSlowDown), m_info.nFormat = AUDIO_S16SYS, 2, SOUND_BUFFER_SIZE);
+		h = Mix_OpenAudio (int32_t (AudioSampleRate (gameOpts->sound.audioSampleRate = SAMPLE_RATE_44K) / fSlowDown), m_info.nFormat = AUDIO_S16SYS, 2, AudioBufferSize (SOUND_BUFFER_SIZE));
 	else 
-		h = Mix_OpenAudio (int32_t ((gameOpts->sound.audioSampleRate = SAMPLE_RATE_22K) / fSlowDown), m_info.nFormat = AUDIO_U8, 1, SOUND_BUFFER_SIZE);
+		h = Mix_OpenAudio (int32_t (AudioSampleRate (gameOpts->sound.audioSampleRate = SAMPLE_RATE_22K) / fSlowDown), m_info.nFormat = AUDIO_U8, 1, AudioBufferSize (SOUND_BUFFER_SIZE));
 	if (h < 0)
 		RETVAL (1)
 #if 1
@@ -854,7 +881,7 @@ else
 	waveSpec.freq = (int32_t) (gameOpts->sound.audioSampleRate / fSlowDown);
 	waveSpec.format = AUDIO_U8;
 	waveSpec.channels = 2;
-	waveSpec.samples = SOUND_BUFFER_SIZE * (gameOpts->sound.audioSampleRate / SAMPLE_RATE_11K);
+	waveSpec.samples = (uint16_t) AudioBufferSize (SOUND_BUFFER_SIZE * (gameOpts->sound.audioSampleRate / SAMPLE_RATE_11K));
 	waveSpec.callback = CAudio::MixCallback;
 	if (SDL_OpenAudio (&waveSpec, NULL) < 0) {
 		SDL_QuitSubSystem (SDL_INIT_AUDIO);
