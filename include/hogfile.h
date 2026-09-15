@@ -23,7 +23,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // the maximum length of a filename
 #define FILENAME_LEN			255
 #define SHORT_FILENAME_LEN 13
-#define MAX_HOGFILES			300
+// Large enough for the mission packs people actually play. Retail is modest -
+// descent.hog has 159 files and descent2.hog 97 - but a pack that replaces the
+// robots and textures per level runs to hundreds: Descent: Full Strike has 648,
+// which the old limit of 300 could not hold.
+#define MAX_HOGFILES			1024
 
 typedef struct tHogFile {
 	char		name [256];
