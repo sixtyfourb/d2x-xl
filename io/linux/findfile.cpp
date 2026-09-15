@@ -44,11 +44,21 @@ int FileFindFirst (const char *pszFilter, FILEFINDSTRUCT *ffsP, int nFlags)
 {
 	char szFilter [FILENAME_LEN];
 	int	i, j;
-#ifdef __macosx__
+  // Match without regard to case everywhere, not only where the filesystem
+  // itself ignores it.
+  //
+  // The engine asks for descent2.hog, descent2.ham and so on in lower case, but
+  // the retail data is upper case - it came off a CD - and what an installer
+  // leaves on disk varies. On a case sensitive filesystem the search then finds
+  // nothing, szRoot is never set, and the game reports every file missing with
+  // "Assumed program folder: ''" rather than naming the real problem.
+  //
+  // This was previously enabled only for macOS, on the grounds that its
+  // filesystem does not distinguish case. That reasoning does not apply to
+  // Linux, but the problem does: it is the data that is inconsistently cased,
+  // not the filesystem. Every other Descent port matches case insensitively for
+  // exactly this reason.
   const int flags = REG_EXTENDED | REG_NOSUB | REG_ICASE;
-#else
-  const int flags = REG_EXTENDED | REG_NOSUB;
-#endif
   
 if (!pszFilter)
 	return -1;
