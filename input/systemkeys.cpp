@@ -951,7 +951,7 @@ else {
 if (gameData.demoData.nState == ND_STATE_PLAYBACK)
 	UpdateVCRState ();
 
-while ((key = KeyInKeyTime (&keyTime)) != 0) {
+while ((key = GameInKey (&keyTime)) != 0) {
 	if (markerManager.DefiningMsg ()) {
 		markerManager.InputMessage (key);
 		continue;

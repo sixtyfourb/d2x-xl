@@ -172,6 +172,8 @@ int32_t JoySetDeadzone (int32_t nRelZone, int32_t nAxis);
 
 int32_t JoyMenuKey (void);
 int32_t MenuInKey (void);
+int32_t JoyGameKey (void);
+int32_t GameInKey (fix* time);
 
 // Set from -logpadinput: log every key the pad stands in for.
 extern int32_t bLogPadInput;

@@ -20,6 +20,7 @@
 #include "sdl_compat.h"
 #include "joy.h"
 #include "key.h"	// for the KEY_* codes JoyMenuKey returns
+#include "kconfig.h"	// to see whether the player has bound Start themselves
 #include "error.h"
 #include "timer.h"
 #include "console.h"
@@ -579,6 +580,61 @@ int32_t MenuInKey (void)
 	int32_t nKey = KeyInKey ();
 
 return nKey ? nKey : JoyMenuKey ();
+}
+
+//------------------------------------------------------------------------------
+// What the pad means while flying: almost nothing.
+//
+// The player's own bindings do the flying, and a general translation here would
+// make every unbound button do something surprising - in dxx-redux an unbound
+// button became Escape and dropped the player out of the level mid-fight. So
+// only Start is offered, and only to open the menu, which is the one thing a
+// handheld player otherwise cannot do at all: there is no Escape key to press.
+//
+// It steps aside if the player has bound Start to something themselves, so
+// their binding keeps working and the button never means two things at once.
+
+int32_t JoyGameKey (void)
+{
+	int32_t i, n;
+
+if (!gameStates.input.nJoysticks)
+	return 0;
+
+for (n = 0; n < gameStates.input.nJoysticks; n++) {
+	tSdlJoystick&	j = sdlJoysticks [n];
+	int32_t			nStart;
+
+	if (JOY_MENU_BUTTON_START >= j.nButtons)
+		continue;
+	nStart = j.buttonMap [JOY_MENU_BUTTON_START] + n * MAX_BUTTONS_PER_JOYSTICK;
+
+	// Bound by the player? Then it is theirs, and we take the press for it
+	// neither here nor by translation.
+	for (i = 0; i < NUM_JOY_CONTROLS; i++)
+		if ((kcJoystick [i].nType == BT_JOY_BUTTON) && (kcJoystick [i].value == nStart))
+			break;
+	if (i < NUM_JOY_CONTROLS)
+		continue;
+
+	if (JoyGetButtonDownCnt (nStart) > 0) {
+		if (bLogPadInput)
+			PrintLog (0, "pad: joystick %d Start -> menu\n", n);
+		return KEY_ESC;
+		}
+	}
+return 0;
+}
+
+//------------------------------------------------------------------------------
+// As KeyInKeyTime (), with the pad's gameplay meaning behind it. For the
+// in-game key loop, so Start opens the menu.
+
+int32_t GameInKey (fix* time)
+{
+	int32_t nKey = KeyInKeyTime (time);
+
+return nKey ? nKey : JoyGameKey ();
 }
 
 //------------------------------------------------------------------------------
