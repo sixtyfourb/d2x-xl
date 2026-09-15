@@ -70,7 +70,7 @@ int8_t fades [64] = { 1,1,1,2,2,3,4,4,5,6,8,9,10,12,13,15,16,17,19,20,22,23,24,2
 int32_t yesNoTextIndex [2] = { TNUM_N, TNUM_Y };
 
 #ifndef USE_LINUX_JOY
-	int32_t joybutton_text [28] =
+	int32_t joybutton_text [MAX_BUTTONS_PER_JOYSTICK] =
  { TNUM_BTN_1, TNUM_BTN_2, TNUM_BTN_3, TNUM_BTN_4,
 	  -1, TNUM_TRIG, TNUM_LEFT, TNUM_HAT_L,
 	 TNUM_RIGHT, -1, TNUM_HAT2_D, TNUM_HAT_R,
@@ -594,10 +594,19 @@ else {
 				//static char szHatDirs [4] = {'U', 'L', 'D', 'R'};
 				static char cHatDirs [4] = { (char) 130, (char) 127, (char) 128, (char) 129};
 
+			// The buttons run: the real ones, then four per hat, then the two
+			// each axis makes so that a trigger can be bound. Without the last
+			// case an axis button indexed cHatDirs, a four char array, past
+			// its end and printed whatever was next in memory.
+				int32_t	nAxisBtn = nHat + 4 * sdlJoysticks [nStick].nHats;
+
 			if (nBtn < nHat)
 				sprintf (szText, "J%d B%d", nStick + 1, nBtn + 1);
-			else
+			else if (nBtn < nAxisBtn)
 				sprintf (szText, "HAT%d%c", nStick + 1, cHatDirs [nBtn - nHat]);
+			else
+				sprintf (szText, "J%dA%d%c", nStick + 1, (nBtn - nAxisBtn) / 2 + 1,
+							((nBtn - nAxisBtn) & 1) ? '+' : '-');
 			}
 #endif
 			break;
@@ -697,10 +706,19 @@ if (item->value != 255) {
 				int32_t	nBtn = item->value % MAX_BUTTONS_PER_JOYSTICK;
 				int32_t	nHat = sdlJoysticks [nStick].nButtons;
 				//static char szHatDirs [4] = {'U', 'L', 'D', 'R'};
+			// The buttons run: the real ones, then four per hat, then the two
+			// each axis makes so that a trigger can be bound. Without the last
+			// case an axis button indexed cHatDirs, a four char array, past
+			// its end and printed whatever was next in memory.
+				int32_t	nAxisBtn = nHat + 4 * sdlJoysticks [nStick].nHats;
+
 			if (nBtn < nHat)
 				sprintf (szText, "J%d B%d", nStick + 1, nBtn + 1);
-			else
+			else if (nBtn < nAxisBtn)
 				sprintf (szText, "HAT%d%c", nStick + 1, cHatDirs [nBtn - nHat]);
+			else
+				sprintf (szText, "J%dA%d%c", nStick + 1, (nBtn - nAxisBtn) / 2 + 1,
+							((nBtn - nAxisBtn) & 1) ? '+' : '-');
 #endif
 			}
 			break;

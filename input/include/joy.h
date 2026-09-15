@@ -89,6 +89,12 @@ typedef struct tSdlJoystick {
 	int32_t				hatMap [MAX_HATS_PER_JOYSTICK];  //Note: Descent expects hats to be buttons, so these are indices into Joystick.buttons
 	int32_t				axisMap [MAX_AXES_PER_JOYSTICK];
 	int32_t				buttonMap [MAX_BUTTONS_PER_JOYSTICK];
+	// Each axis also appears as a pair of buttons, negative deflection then
+	// positive, so that a shoulder trigger - which XInput reports as an axis,
+	// not a button - can be bound to fire something. axisButtonMap holds the
+	// index of the first of the two, axisRest where the axis sits untouched.
+	int32_t				axisButtonMap [MAX_AXES_PER_JOYSTICK];
+	int32_t				axisRest [MAX_AXES_PER_JOYSTICK];
 } __pack__ tSdlJoystick;
 
 extern struct tSdlJoystick /*SDL_Joystick*/ sdlJoysticks [MAX_JOYSTICKS];

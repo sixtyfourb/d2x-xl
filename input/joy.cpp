@@ -102,14 +102,59 @@ for (int32_t hbi = 0; hbi < 4; hbi++) {
 
 //------------------------------------------------------------------------------
 
+// An axis is held far enough over to count as a button press at this much
+// deflection from rest, and stops counting at the lower figure. The gap is what
+// keeps an axis resting near the threshold from chattering.
+#define JOY_AXIS_BUTTON_ON		16384
+#define JOY_AXIS_BUTTON_OFF		11000
+
+static void JoyAxisButton (int32_t nButton, int32_t bDown)
+{
+	tJoyButton*	pButton = joyInfo.buttons + nButton;
+
+if (bDown == pButton->state)
+	return;
+pButton->lastState = pButton->state;
+pButton->state = bDown;
+if (bDown) {
+	pButton->xTimeWentDown = TimerGetFixedSeconds ();
+	pButton->numDowns++;
+	}
+else
+	pButton->numUps++;
+if (bLogPadInput)
+	PrintLog (0, "pad: axis button %d %s\n", nButton, bDown ? "down" : "up");
+}
+
+//------------------------------------------------------------------------------
+
 void JoyAxisHandler (SDL_JoyAxisEvent *jae)
 {
 if (jae->which >= MAX_JOYSTICKS)
 	return;
-int32_t axis = sdlJoysticks [jae->which].axisMap [jae->axis] + jae->which * MAX_AXES_PER_JOYSTICK;
+
+	tSdlJoystick&	j = sdlJoysticks [jae->which];
+
+// nAxes is clamped to MAX_AXES_PER_JOYSTICK at init, but the events keep coming
+// for the axes past it, and both maps are only that long.
+if (jae->axis >= j.nAxes)
+	return;
+
+	int32_t	axis = j.axisMap [jae->axis] + jae->which * MAX_AXES_PER_JOYSTICK;
+
 joyInfo.axes [axis].nValue = jae->value;
-if (jae->which)
-	axis = 0;
+
+	{
+	int32_t	nButton = j.axisButtonMap [jae->axis] + jae->which * MAX_BUTTONS_PER_JOYSTICK;
+	int32_t	d = int32_t (jae->value) - j.axisRest [jae->axis];
+	int32_t	bMinus = joyInfo.buttons [nButton].state;
+	int32_t	bPlus = joyInfo.buttons [nButton + 1].state;
+
+	// Hysteresis: a button that is already down needs to come back further
+	// than it took to press it before it counts as released.
+	JoyAxisButton (nButton, (d < -(bMinus ? JOY_AXIS_BUTTON_OFF : JOY_AXIS_BUTTON_ON)));
+	JoyAxisButton (nButton + 1, (d > (bPlus ? JOY_AXIS_BUTTON_OFF : JOY_AXIS_BUTTON_ON)));
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -182,12 +227,41 @@ for (i = 0; (i < n) && (gameStates.input.nJoysticks < MAX_JOYSTICKS); i++) {
 			joybutton_text [joyInfo.nButtons++] = i ? TNUM_HAT2_D : TNUM_HAT_D;
 			joybutton_text [joyInfo.nButtons++] = i ? TNUM_HAT2_L : TNUM_HAT_L;
 			}
+
+		// Each axis becomes two more buttons, negative deflection then positive.
+		//
+		// Without this the shoulder triggers cannot be bound to anything at
+		// all: XInput reports them as axes, the controls screen captures a
+		// button by polling button state, and so pulling a trigger there does
+		// nothing and looks broken.
+		//
+		// Deflection is measured from where the axis actually rests, not from
+		// zero, which is the whole difficulty: a trigger rests at one end of
+		// its travel, so from zero it reads as permanently held in one
+		// direction. Ask SDL where each axis sits now, before anyone has
+		// touched it.
+		SDL_JoystickUpdate ();
+		for (j = 0; j < pJoystick->nAxes; j++) {
+			pJoystick->axisRest [j] = SDL_JoystickGetAxis (pJoystick->handle, j);
+			pJoystick->axisButtonMap [j] = joyInfo.nButtons;
+			joyInfo.nButtons += 2;
+			}
 		// Unconditionally, because everything above is behind #if TRACE and a
 		// handheld that will not steer is the commonest thing to have to
 		// diagnose from a log somebody else produced.
 		PrintLog (0, "   joystick %d: '%s', %d axes, %d buttons, %d hats\n",
 					 i, SDL_JoystickNameForIndex (i) ? SDL_JoystickNameForIndex (i) : "?",
 					 pJoystick->nAxes, pJoystick->nButtons, pJoystick->nHats);
+		// Where each axis rests, because the axis buttons are measured from it.
+		// A trigger rests at one end of its travel and a stick in the middle;
+		// if these ever come back wrong the symptom is an axis button stuck
+		// down, which is otherwise a mystery.
+		{
+			char	szRest [256] = {'\0'};
+			for (j = 0; j < pJoystick->nAxes; j++)
+				sprintf (szRest + strlen (szRest), " %d", pJoystick->axisRest [j]);
+			PrintLog (0, "      axes rest at:%s\n", szRest);
+		}
 		pJoystick++;
 		gameStates.input.nJoysticks++;
 		}
