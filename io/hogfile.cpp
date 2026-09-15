@@ -177,11 +177,21 @@ CLevelHeader lh;
 
 for (;;) {
 	if (*nFiles >= MAX_HOGFILES) {
+		// This used to warn and fall through, which is how a hog with more
+		// files than the table holds took the game down: the loop carried on
+		// reading from the FILE* it had just closed, writing entry 300, 301 and
+		// upwards into whatever followed the array. Descent: Full Strike has
+		// 648 files, so that was 348 entries - some 90KB - of overflow.
 		fclose (fp);
-		Warning ("HOG file is limited to %d files.\n",  MAX_HOGFILES);
+		Warning ("Only the first %d files of a HOG can be used.\n", MAX_HOGFILES);
+		return 1;
 		}
 	if (!lh.Read (fp)) {		//eof here is ok
 		fclose (fp);
+		// How many files a HOG turned out to hold is worth a line: it is what
+		// tells you a mission is near the table limit, and it was the missing
+		// fact when Full Strike's 648 files silently overran it.
+		PrintLog (0, "HOG '%s': %d files\n", pszFile, *nFiles);
 		return 1;
 		}
 	strcpy (hogFiles [*nFiles].name, lh.Name ());
