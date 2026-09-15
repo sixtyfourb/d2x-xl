@@ -1314,6 +1314,7 @@ for (;;) {
 gameStates.render.nMeshQuality = gameOpts->render.nMeshQuality;
 	/*---*/PrintLog (1, "allocating render buffers\n");
 if (!gameData.renderData.mine.Create (1)) {
+	PrintLog (0, "level load abandoned: the render buffers could not be allocated\n");
 	PrintLog (-1);
 	return 4;
 	}
