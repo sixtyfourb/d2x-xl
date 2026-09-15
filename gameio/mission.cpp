@@ -710,6 +710,12 @@ else {
 	}
 if (m_nCount > nTopPlace)
 	qsort (m_list + nTopPlace, m_nCount - nTopPlace, sizeof (*m_list), (int32_t (_CDECL_ *)(const void *, const void *)) MLSortFunc);
+// In the order the browser will show them. "Why is my mission not in the list"
+// is otherwise unanswerable from a log: a mission can be missing because the
+// file is not there, because parsing rejected it, or because it is one folder
+// further down, and these three look identical from outside.
+for (int32_t i = 0; i < m_nCount; i++)
+	PrintLog (0, "   %3d. %-32s (%s)\n", i, m_list [i].szMissionName, m_list [i].filename);
 //if (m_nCount > nTopPlace)
 //	qsort(m_list + nTopPlace, m_nCount - nTopPlace, sizeof (*m_list), (int32_t (_CDECL_ *) (const void *, const void * )) MLSortFunc);
 return m_nCount;
