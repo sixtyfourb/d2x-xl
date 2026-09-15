@@ -412,6 +412,8 @@ gameStates.app.bLittleEndian = (h.s == 256);
 void DoJoystickInit ()
 {
 
+bLogPadInput = FindArg ("-logpadinput") > 0;
+PrintLog (0, "   pad input logging: %d\n", bLogPadInput);
 if (!FindArg ("-nojoystick")) {
 	JoyInit ();
 	if (FindArg ("-joyslow"))

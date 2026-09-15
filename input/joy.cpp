@@ -118,6 +118,19 @@ int32_t JoyInit (void)
 	int32_t			i, j, n;
 	tSdlJoystick	*pJoystick = sdlJoysticks;
 
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+// Keep reading the pad even when the window does not hold input focus.
+//
+// SDL2 discards every joystick event while the window is unfocused, which SDL
+// 1.2 did not do, so this is a behaviour change the port inherited rather than
+// chose. On a desktop it is barely noticeable. Under a compositor that manages
+// focus itself - gamescope, which is how these handhelds run games - the window
+// can be the only thing on screen and still not be what SDL considers focused,
+// and then the pad is dead with no diagnostic: the joysticks open, the axes
+// read zero forever.
+SDL_SetHint (SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+#endif
+
 if (SDL_Init (SDL_INIT_JOYSTICK) < 0) {
 #if TRACE
 	console.printf(CON_VERBOSE, "sdl-joystick: initialisation failed: %s.",SDL_GetError());
@@ -168,6 +181,12 @@ for (i = 0; (i < n) && (gameStates.input.nJoysticks < MAX_JOYSTICKS); i++) {
 			joybutton_text [joyInfo.nButtons++] = i ? TNUM_HAT2_D : TNUM_HAT_D;
 			joybutton_text [joyInfo.nButtons++] = i ? TNUM_HAT2_L : TNUM_HAT_L;
 			}
+		// Unconditionally, because everything above is behind #if TRACE and a
+		// handheld that will not steer is the commonest thing to have to
+		// diagnose from a log somebody else produced.
+		PrintLog (0, "   joystick %d: '%s', %d axes, %d buttons, %d hats\n",
+					 i, SDL_JoystickNameForIndex (i) ? SDL_JoystickNameForIndex (i) : "?",
+					 pJoystick->nAxes, pJoystick->nButtons, pJoystick->nHats);
 		pJoystick++;
 		gameStates.input.nJoysticks++;
 		}
@@ -181,6 +200,7 @@ for (i = 0; (i < n) && (gameStates.input.nJoysticks < MAX_JOYSTICKS); i++) {
 	console.printf(CON_VERBOSE, "sdl-joystick: %d buttons (total)\n", joyInfo.nButtons);
 #endif
 	}
+PrintLog (0, "   %d joystick(s) usable for menus\n", gameStates.input.nJoysticks);
 return bJoyPresent;
 }
 
@@ -416,6 +436,11 @@ return joyDeadzone [nAxis] = (fix) FRound (32767.0f * (float) gameOpts->input.jo
 // without it. The pad's directions are read as levels rather than as events -
 // a stick has no key-up - so the repeat has to be timed here.
 
+// -logpadinput writes every key the pad stands in for to d2x.log. A handheld
+// that will not steer looks identical whether the pad is not seen, not read, or
+// read and ignored, and only this tells the three apart.
+int32_t bLogPadInput = 0;
+
 static int32_t JoyMenuDirection (int32_t nDir, int32_t bDown, uint32_t t)
 {
 	static uint32_t tRepeat [4] = {0, 0, 0, 0};
@@ -435,10 +460,13 @@ return 1;
 }
 
 //------------------------------------------------------------------------------
-// What the first pad has to say, as a key code, or 0 for nothing.
+// What the pad has to say, as a key code, or 0 for nothing.
 //
-// Only the first pad: a second one belongs to a second player, and having it
-// move the first player's menu cursor would be worse than useless.
+// Every opened pad, not just the first. Which slot the one in the player's
+// hands lands in is not up to us: on a handheld, the physical controls are
+// often hidden behind a virtual pad that the compositor creates later, so the
+// live device can be any index. A second player's pad moving this menu is a
+// far smaller problem than a menu nothing can move.
 
 int32_t JoyMenuKey (void)
 {
@@ -460,59 +488,83 @@ int32_t JoyMenuKey (void)
 
 	int32_t	bDown [4] = {0, 0, 0, 0};
 	int32_t	nKey = 0;
-	int32_t	i;
+	int32_t	i, n;
 
 if (!gameStates.input.nJoysticks)
 	return 0;
 
-	tSdlJoystick&	j = sdlJoysticks [0];
-	uint32_t			t = SDL_GetTicks ();
+	uint32_t	t = SDL_GetTicks ();
 
-// The hat, which JoyInit expands into four consecutive buttons in the order
-// up, right, down, left.
-for (i = 0; i < j.nHats; i++) {
-	int32_t hat = j.hatMap [i];
-	bDown [JOY_MENU_UP]    |= joyInfo.buttons [hat].state;
-	bDown [JOY_MENU_RIGHT] |= joyInfo.buttons [hat + 1].state;
-	bDown [JOY_MENU_DOWN]  |= joyInfo.buttons [hat + 2].state;
-	bDown [JOY_MENU_LEFT]  |= joyInfo.buttons [hat + 3].state;
+if (bLogPadInput) {
+	static uint32_t tHeartbeat = 0;
+	if (t - tHeartbeat > 2000) {
+		tHeartbeat = t;
+		PrintLog (0, "pad: JoyMenuKey polling; axes %d %d %d %d, hat state %d%d%d%d\n",
+					 joyInfo.axes [0].nValue, joyInfo.axes [1].nValue,
+					 joyInfo.axes [2].nValue, joyInfo.axes [3].nValue,
+					 joyInfo.buttons [sdlJoysticks [0].hatMap [0]].state,
+					 joyInfo.buttons [sdlJoysticks [0].hatMap [0] + 1].state,
+					 joyInfo.buttons [sdlJoysticks [0].hatMap [0] + 2].state,
+					 joyInfo.buttons [sdlJoysticks [0].hatMap [0] + 3].state);
+		}
 	}
 
-// The left stick, which means the same as the hat once it is far enough over.
-// Half deflection is the smallest threshold worth trusting: a handheld's stick
-// rests off centre often enough, and the menu deadzone is not the one the
-// player tuned for flying.
-if (j.nAxes > 1) {
-	int32_t x = joyInfo.axes [j.axisMap [0]].nValue;
-	int32_t y = joyInfo.axes [j.axisMap [1]].nValue;
+for (n = 0; n < gameStates.input.nJoysticks; n++) {
+	tSdlJoystick&	j = sdlJoysticks [n];
+	int32_t			nBase = n * MAX_BUTTONS_PER_JOYSTICK;
+	int32_t			nAxisBase = n * MAX_AXES_PER_JOYSTICK;
 
-	if (y < -JOY_MENU_AXIS_THRESHOLD)
-		bDown [JOY_MENU_UP] = 1;
-	else if (y > JOY_MENU_AXIS_THRESHOLD)
-		bDown [JOY_MENU_DOWN] = 1;
-	if (x < -JOY_MENU_AXIS_THRESHOLD)
-		bDown [JOY_MENU_LEFT] = 1;
-	else if (x > JOY_MENU_AXIS_THRESHOLD)
-		bDown [JOY_MENU_RIGHT] = 1;
+	// The hat, which JoyInit expands into four consecutive buttons in the
+	// order up, right, down, left.
+	for (i = 0; i < j.nHats; i++) {
+		int32_t hat = j.hatMap [i] + nBase;
+		bDown [JOY_MENU_UP]    |= joyInfo.buttons [hat].state;
+		bDown [JOY_MENU_RIGHT] |= joyInfo.buttons [hat + 1].state;
+		bDown [JOY_MENU_DOWN]  |= joyInfo.buttons [hat + 2].state;
+		bDown [JOY_MENU_LEFT]  |= joyInfo.buttons [hat + 3].state;
+		}
+
+	// The left stick, which means the same as the hat once it is far enough
+	// over. Half deflection is the smallest threshold worth trusting: a
+	// handheld's stick rests off centre often enough, and the menu deadzone is
+	// not the one the player tuned for flying.
+	if (j.nAxes > 1) {
+		int32_t x = joyInfo.axes [j.axisMap [0] + nAxisBase].nValue;
+		int32_t y = joyInfo.axes [j.axisMap [1] + nAxisBase].nValue;
+
+		if (y < -JOY_MENU_AXIS_THRESHOLD)
+			bDown [JOY_MENU_UP] = 1;
+		else if (y > JOY_MENU_AXIS_THRESHOLD)
+			bDown [JOY_MENU_DOWN] = 1;
+		if (x < -JOY_MENU_AXIS_THRESHOLD)
+			bDown [JOY_MENU_LEFT] = 1;
+		else if (x > JOY_MENU_AXIS_THRESHOLD)
+			bDown [JOY_MENU_RIGHT] = 1;
+		}
+
+	// Buttons need no repeat, so take them as the events they are. Read all of
+	// them whatever happens - an unread press stays queued and would arrive a
+	// frame later, out of order with whatever came next.
+	for (i = 0; i < int32_t (sizeofa (buttonKeys)); i++) {
+		if (buttonKeys [i].nButton >= j.nButtons)
+			continue;
+		if ((JoyGetButtonDownCnt (j.buttonMap [buttonKeys [i].nButton] + nBase) > 0) && !nKey) {
+			nKey = buttonKeys [i].nKey;
+			if (bLogPadInput)
+				PrintLog (0, "pad: joystick %d button %d -> key %d\n", n, buttonKeys [i].nButton, nKey);
+			}
+		}
 	}
 
 // Every direction every time, even once one has fired: the ones that were let
 // go have to be seen to be let go, or they will not repeat properly next time.
 for (i = 0; i < 4; i++)
-	if (JoyMenuDirection (i, bDown [i], t) && !nKey)
+	if (JoyMenuDirection (i, bDown [i], t) && !nKey) {
 		nKey = nDirKeys [i];
-if (nKey)
-	return nKey;
+		if (bLogPadInput)
+			PrintLog (0, "pad: direction %d -> key %d\n", i, nKey);
+		}
 
-// Buttons need no repeat, so take them as the events they are. Read all of
-// them whatever happens - an unread press stays queued and would arrive a
-// frame later, out of order with whatever came next.
-for (i = 0; i < int32_t (sizeofa (buttonKeys)); i++) {
-	if (buttonKeys [i].nButton >= j.nButtons)
-		continue;
-	if ((JoyGetButtonDownCnt (j.buttonMap [buttonKeys [i].nButton]) > 0) && !nKey)
-		nKey = buttonKeys [i].nKey;
-	}
 return nKey;
 }
 

@@ -24,6 +24,7 @@
 #endif
 
 #include "descent.h"
+#include "joy.h"
 
 extern void KeyHandler (SDL_KeyboardEvent *event);
 extern void MouseButtonHandler (SDL_MouseButtonEvent *mbe);
@@ -83,12 +84,22 @@ while (SDL_PollEvent (&event)) {
 #ifndef USE_LINUX_JOY       // stpohle - so we can choose at compile time..
 		case SDL_JOYBUTTONDOWN:
 		case SDL_JOYBUTTONUP:
+			if (bLogPadInput)
+				PrintLog (0, "pad: SDL button %d %s (joystick %d)\n",
+							 event.jbutton.button, (event.type == SDL_JOYBUTTONDOWN) ? "down" : "up",
+							 int32_t (event.jbutton.which));
 			JoyButtonHandler (reinterpret_cast<SDL_JoyButtonEvent*> (&event));
 			break;
 		case SDL_JOYAXISMOTION:
+			if (bLogPadInput)
+				PrintLog (0, "pad: SDL axis %d = %d (joystick %d)\n",
+							 event.jaxis.axis, int32_t (event.jaxis.value), int32_t (event.jaxis.which));
 			JoyAxisHandler (reinterpret_cast<SDL_JoyAxisEvent*> (&event));
 			break;
 		case SDL_JOYHATMOTION:
+			if (bLogPadInput)
+				PrintLog (0, "pad: SDL hat %d = %d (joystick %d)\n",
+							 event.jhat.hat, int32_t (event.jhat.value), int32_t (event.jhat.which));
 			JoyHatHandler (reinterpret_cast<SDL_JoyHatEvent*> (&event));
 			break;
 		case SDL_JOYBALLMOTION:

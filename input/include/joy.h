@@ -173,6 +173,9 @@ int32_t JoySetDeadzone (int32_t nRelZone, int32_t nAxis);
 int32_t JoyMenuKey (void);
 int32_t MenuInKey (void);
 
+// Set from -logpadinput: log every key the pad stands in for.
+extern int32_t bLogPadInput;
+
 extern int32_t joyDeadzone [UNIQUE_JOY_AXES];
 extern int32_t joyDeadzoneRel [UNIQUE_JOY_AXES];
 
