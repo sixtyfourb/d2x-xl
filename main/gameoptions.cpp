@@ -533,7 +533,12 @@ else {
 	keyboard.bRamp [1] =
 	keyboard.bRamp [2] = 0;
 	mouse.bUse = 1;
-	joystick.bUse = 0;
+	// On by default. These machines are gamepads with a screen attached, and a
+	// pad that is present but switched off in the options looks exactly like a
+	// pad that does not work - there is nothing on screen to say otherwise, and
+	// the option is several menus deep. Costs nothing where no pad is attached,
+	// since then there is nothing to read.
+	joystick.bUse = 1;
 	mouse.bSyncAxis = 1;
 	mouse.nDeadzone = 0;
 	mouse.bJoystick = 0;
