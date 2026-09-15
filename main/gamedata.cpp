@@ -478,20 +478,32 @@ nObjRenderSegs = 0;
 
 //------------------------------------------------------------------------------
 
+// As CREATE, but says which buffer would not come and how big it was asked to
+// be. Failing here aborts the level load, and the log said only "allocating
+// render buffers" and then nothing - no array, no size, no reason. Note that
+// CArray::Create returns its buffer, so a request for zero entries reports as a
+// failure too, which is worth being able to see.
+#define CREATE_OR_REPORT(_p,_s,_f) \
+	if ((_p).Create (_s, #_p)) (_p).Clear (_f); \
+	else { \
+		PrintLog (0, "could not allocate render buffer '%s' (%d entries)\n", #_p, int32_t (_s)); \
+		return false; \
+		}
+
 bool CMineRenderData::Create (int32_t nState)
 {
 for (int32_t i = 0, j = gameStates.app.nThreads + 2; i < j; i++)
 	visibility [i].Create (nState);
 if (nState == 1) {
-	CREATE (objRenderSegList, LEVEL_SEGMENTS, 0);
-	CREATE (renderFaceListP, FACES.nFaces, 0);
-	CREATE (bObjectRendered, gameData.objData.nMaxObjects, 0);
-	CREATE (bRenderSegment, LEVEL_SEGMENTS, 0);
-	CREATE (nRenderObjList, gameData.objData.nMaxObjects, 0);
-	CREATE (bCalcVertexColor, LEVEL_VERTICES, 0);
-	CREATE (bAutomapVisited, LEVEL_SEGMENTS, 0);
-	CREATE (bAutomapVisible, LEVEL_SEGMENTS, 0);
-	CREATE (bRadarVisited, LEVEL_SEGMENTS, 0);
+	CREATE_OR_REPORT (objRenderSegList, LEVEL_SEGMENTS, 0);
+	CREATE_OR_REPORT (renderFaceListP, FACES.nFaces, 0);
+	CREATE_OR_REPORT (bObjectRendered, gameData.objData.nMaxObjects, 0);
+	CREATE_OR_REPORT (bRenderSegment, LEVEL_SEGMENTS, 0);
+	CREATE_OR_REPORT (nRenderObjList, gameData.objData.nMaxObjects, 0);
+	CREATE_OR_REPORT (bCalcVertexColor, LEVEL_VERTICES, 0);
+	CREATE_OR_REPORT (bAutomapVisited, LEVEL_SEGMENTS, 0);
+	CREATE_OR_REPORT (bAutomapVisible, LEVEL_SEGMENTS, 0);
+	CREATE_OR_REPORT (bRadarVisited, LEVEL_SEGMENTS, 0);
 	}
 return true;
 }
