@@ -525,14 +525,31 @@ CFile* pFile = cfPiggy + bD1;
 if (!pFile->File ())
 	PiggyInitPigFile (NULL);
 int32_t nOffset = bitmapOffsets [bD1][nIndex];
-if (pFile->Seek (nOffset, SEEK_SET))
+// Say what could not be read. This throw reaches the player as "Couldn't load
+// the level: Reading some data failed", which names neither the file nor the
+// texture, and a mission that carries its own .pig has plenty of ways to end up
+// with offsets that do not belong to the file that is actually open.
+if (!pFile->File ()) {
+	PrintLog (0, "texture '%s' (%s index %d): no pig file is open\n",
+				 pBm->Name (), bD1 ? "D1" : "D2", nIndex);
 	throw (EX_IO_ERROR);
+	}
+if (pFile->Seek (nOffset, SEEK_SET)) {
+	PrintLog (0, "texture '%s' (%s index %d): cannot seek to %d in '%s' (%d bytes)\n",
+				 pBm->Name (), bD1 ? "D1" : "D2", nIndex, nOffset,
+				 pFile->Name (), int32_t (pFile->Length ()));
+	throw (EX_IO_ERROR);
+	}
 pBm->CreateBuffer ();
 if (!pBm->Buffer () || (bitmapCacheUsed > bitmapCacheSize))
 	throw (EX_OUT_OF_MEMORY);
 pBm->SetFlags (gameData.pigData.tex.bitmapFlags [bD1][nIndex]);
-if (0 > ReadBitmap (pFile, pBm, pBm->FrameSize (), bD1 != 0)) 
+if (0 > ReadBitmap (pFile, pBm, pBm->FrameSize (), bD1 != 0)) {
+	PrintLog (0, "texture '%s' (%s index %d): read of %d bytes at %d from '%s' (%d bytes) failed\n",
+				 pBm->Name (), bD1 ? "D1" : "D2", nIndex, int32_t (pBm->FrameSize ()),
+				 nOffset, pFile->Name (), int32_t (pFile->Length ()));
 	throw (EX_IO_ERROR);
+	}
 UseBitmapCache (pBm, int32_t (pBm->FrameSize ()));
 return 1;
 }
