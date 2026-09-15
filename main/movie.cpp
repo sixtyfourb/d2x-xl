@@ -29,6 +29,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "descent.h"
 #include "movie.h"
 #include "key.h"
+#include "joy.h"	// MenuInKey (): let the pad skip a movie
 #include "strutil.h"
 #include "error.h"
 #include "u_mem.h"
@@ -724,7 +725,7 @@ while ((result = MVE_rmStepMovie ()) == 0) {
 	subTitles.Draw (nFrame);
 	//paletteManager.ResumeEffect (); // moved this here because of flashing
 	ogl.Update (1);
-	key = KeyInKey ();
+	key = MenuInKey ();
 	// If ESCAPE pressed, then quit movie.
 	if (key == KEY_ESC) {
 		result = aborted = 1;
@@ -734,7 +735,7 @@ while ((result = MVE_rmStepMovie ()) == 0) {
 	if (key == KEY_PAUSE) {
 		MVE_rmHoldMovie ();
 		ShowPauseMessage (TXT_PAUSE);
-		while (!KeyInKey ()) 
+		while (!MenuInKey ()) 
 			;
 		ClearPauseMessage ();
 		}

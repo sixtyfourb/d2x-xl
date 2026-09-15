@@ -1022,7 +1022,7 @@ if ((t > 0) && (year == 2015) && (month == 4) && (day <= 10))
 	CTimeout to (30000);
 	do {
 		messageBox.CMenu::Render (NULL, NULL);
-		int32_t nKey = KeyInKey ();
+		int32_t nKey = MenuInKey ();
 		if (/*(to.Progress () > 3000) &&*/ (nKey == KEY_ESC) || (nKey == KEY_ENTER))
 			break;
 	} while (!to.Expired ());
@@ -1227,7 +1227,7 @@ if (! CFile::Exist (szExitScreen, gameFolders.game.szData [0], 0))
 int32_t pcxResult = PcxReadFullScrImage (szExitScreen, 0);
 if (pcxResult == PCX_ERROR_NONE) {
 	ogl.Update (0);
-	while (!(KeyInKey () || MouseButtonState (0)))
+	while (!(MenuInKey () || MouseButtonState (0)))
 		;
 	}
 KeyFlush ();

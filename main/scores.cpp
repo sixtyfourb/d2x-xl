@@ -356,7 +356,7 @@ for (int32_t i = 0; i < 3; i++)
 	if (MouseButtonDownCount (i) > 0) 
 		return 0;
 
-int32_t k = KeyInKey ();
+int32_t k = MenuInKey ();
 switch (k) {
 	case KEY_CTRLED + KEY_R:	
 		if (nCurItem < 0)	{

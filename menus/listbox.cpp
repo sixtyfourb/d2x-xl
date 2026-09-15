@@ -202,7 +202,7 @@ while (!m_bDone) {
 	else if (bWheelDown)
 		m_nKey = KEY_DOWN;
 	else
-		m_nKey = KeyInKey ();
+		m_nKey = MenuInKey ();
 
 	m_bRedraw = callback ? (*callback) (&m_nChoice, items, &m_nKey) : 0;
 

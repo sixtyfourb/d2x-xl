@@ -165,6 +165,14 @@ int32_t JoyGetScaledReading (int32_t raw, int32_t axn);
 void JoySetSlowReading (int32_t flag);
 int32_t JoySetDeadzone (int32_t nRelZone, int32_t nAxis);
 
+//==========================================================================
+// Translates the first pad into the keys the menus already understand. See
+// joy.cpp. MenuInKey () is KeyInKey () with that translation behind it, and
+// belongs in any input loop a player with no keyboard has to get through.
+
+int32_t JoyMenuKey (void);
+int32_t MenuInKey (void);
+
 extern int32_t joyDeadzone [UNIQUE_JOY_AXES];
 extern int32_t joyDeadzoneRel [UNIQUE_JOY_AXES];
 

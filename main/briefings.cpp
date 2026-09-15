@@ -902,7 +902,7 @@ return pBot && (!pEnd || (pBot < pEnd));
 
 int32_t CBriefing::InKey (void)
 {
-	int32_t	funcRes = KeyInKey ();
+	int32_t	funcRes = MenuInKey ();
 
 if (funcRes == KEY_PRINT_SCREEN) {
 	gameStates.app.bSaveScreenShot = 1;

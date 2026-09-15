@@ -19,6 +19,7 @@
 #include "descent.h"
 #include "sdl_compat.h"
 #include "joy.h"
+#include "key.h"	// for the KEY_* codes JoyMenuKey returns
 #include "error.h"
 #include "timer.h"
 #include "console.h"
@@ -286,6 +287,12 @@ if (!gameStates.input.nJoysticks)
 for (int32_t i = 0; i < MAX_JOYSTICKS * JOY_MAX_BUTTONS; i++) {
 	joyInfo.buttons [i].xTimeWentDown = 0;
 	joyInfo.buttons [i].numDowns = 0;
+	// Forget that a button is being held, the way KeyFlush () forgets a held
+	// key. Without this, accepting an item on the controls screen with the pad
+	// hands the capture that still-held button to bind, and the player binds A
+	// to whatever they were only trying to open.
+	joyInfo.buttons [i].lastState =
+	joyInfo.buttons [i].state = 0;
 	}
 
 }
@@ -366,6 +373,160 @@ int32_t JoySetDeadzone (int32_t nRelZone, int32_t nAxis)
 nAxis %= UNIQUE_JOY_AXES;
 gameOpts->input.joystick.deadzones [nAxis] = (nRelZone > 100) ? 100 : (nRelZone < 0) ? 0 : nRelZone;
 return joyDeadzone [nAxis] = (fix) FRound (32767.0f * (float) gameOpts->input.joystick.deadzones [nAxis] / 100.0f);
+}
+
+//------------------------------------------------------------------------------
+//
+// Driving the menus from a gamepad.
+//
+// D2X-XL reads the keyboard and the mouse. On a handheld with neither, the game
+// renders and flies but cannot be navigated: the main menu ignores the pad,
+// briefings cannot be skipped, and the controls screen - the one screen nobody
+// setting a pad up can avoid - cannot be left again.
+//
+// Two dozen input loops read KeyInKey (). Rather than teach each of them about
+// joysticks, translate the pad into the keys they already understand, here where
+// the button numbering is known. A loop opts in by calling MenuInKey () instead,
+// and only the loops a player has to get through do: flight code polls the
+// joystick directly and never comes past here, so a button cannot mean two
+// things at once.
+
+#define JOY_MENU_REPEAT_DELAY		350		// ms held before a direction repeats
+#define JOY_MENU_REPEAT_RATE		100		// ms between repeats after that
+#define JOY_MENU_AXIS_THRESHOLD	(32767 / 2)
+
+// Numbered for an XInput-shaped pad, which is what these handhelds present -
+// and what SDL reports for anything claiming to be one.
+#define JOY_MENU_BUTTON_A			0
+#define JOY_MENU_BUTTON_B			1
+#define JOY_MENU_BUTTON_X			2
+#define JOY_MENU_BUTTON_Y			3
+#define JOY_MENU_BUTTON_LB			4
+#define JOY_MENU_BUTTON_RB			5
+#define JOY_MENU_BUTTON_BACK		6
+#define JOY_MENU_BUTTON_START		7
+
+#define JOY_MENU_UP					0
+#define JOY_MENU_DOWN				1
+#define JOY_MENU_LEFT				2
+#define JOY_MENU_RIGHT				3
+
+//------------------------------------------------------------------------------
+// Arrow keys repeat when held, and a list of thirty missions is unusable
+// without it. The pad's directions are read as levels rather than as events -
+// a stick has no key-up - so the repeat has to be timed here.
+
+static int32_t JoyMenuDirection (int32_t nDir, int32_t bDown, uint32_t t)
+{
+	static uint32_t tRepeat [4] = {0, 0, 0, 0};
+
+if (!bDown) {
+	tRepeat [nDir] = 0;
+	return 0;
+	}
+if (!tRepeat [nDir]) {	// went down this frame: act at once, then wait
+	tRepeat [nDir] = t + JOY_MENU_REPEAT_DELAY;
+	return 1;
+	}
+if (t < tRepeat [nDir])
+	return 0;
+tRepeat [nDir] = t + JOY_MENU_REPEAT_RATE;
+return 1;
+}
+
+//------------------------------------------------------------------------------
+// What the first pad has to say, as a key code, or 0 for nothing.
+//
+// Only the first pad: a second one belongs to a second player, and having it
+// move the first player's menu cursor would be worse than useless.
+
+int32_t JoyMenuKey (void)
+{
+	static const int32_t nDirKeys [4] = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT};
+
+	static const struct {
+		int32_t	nButton;
+		int32_t	nKey;
+		}	buttonKeys [] = {
+			{JOY_MENU_BUTTON_A,		KEY_ENTER},		// accept, and open a submenu
+			{JOY_MENU_BUTTON_START,	KEY_ENTER},
+			{JOY_MENU_BUTTON_B,		KEY_ESC},		// back out
+			{JOY_MENU_BUTTON_BACK,	KEY_ESC},
+			{JOY_MENU_BUTTON_X,		KEY_SPACEBAR},	// tick a checkbox without accepting
+			{JOY_MENU_BUTTON_Y,		KEY_F1},			// what does this option do?
+			{JOY_MENU_BUTTON_LB,		KEY_PAGEUP},	// a slider, ten at a time
+			{JOY_MENU_BUTTON_RB,		KEY_PAGEDOWN}
+			};
+
+	int32_t	bDown [4] = {0, 0, 0, 0};
+	int32_t	nKey = 0;
+	int32_t	i;
+
+if (!gameStates.input.nJoysticks)
+	return 0;
+
+	tSdlJoystick&	j = sdlJoysticks [0];
+	uint32_t			t = SDL_GetTicks ();
+
+// The hat, which JoyInit expands into four consecutive buttons in the order
+// up, right, down, left.
+for (i = 0; i < j.nHats; i++) {
+	int32_t hat = j.hatMap [i];
+	bDown [JOY_MENU_UP]    |= joyInfo.buttons [hat].state;
+	bDown [JOY_MENU_RIGHT] |= joyInfo.buttons [hat + 1].state;
+	bDown [JOY_MENU_DOWN]  |= joyInfo.buttons [hat + 2].state;
+	bDown [JOY_MENU_LEFT]  |= joyInfo.buttons [hat + 3].state;
+	}
+
+// The left stick, which means the same as the hat once it is far enough over.
+// Half deflection is the smallest threshold worth trusting: a handheld's stick
+// rests off centre often enough, and the menu deadzone is not the one the
+// player tuned for flying.
+if (j.nAxes > 1) {
+	int32_t x = joyInfo.axes [j.axisMap [0]].nValue;
+	int32_t y = joyInfo.axes [j.axisMap [1]].nValue;
+
+	if (y < -JOY_MENU_AXIS_THRESHOLD)
+		bDown [JOY_MENU_UP] = 1;
+	else if (y > JOY_MENU_AXIS_THRESHOLD)
+		bDown [JOY_MENU_DOWN] = 1;
+	if (x < -JOY_MENU_AXIS_THRESHOLD)
+		bDown [JOY_MENU_LEFT] = 1;
+	else if (x > JOY_MENU_AXIS_THRESHOLD)
+		bDown [JOY_MENU_RIGHT] = 1;
+	}
+
+// Every direction every time, even once one has fired: the ones that were let
+// go have to be seen to be let go, or they will not repeat properly next time.
+for (i = 0; i < 4; i++)
+	if (JoyMenuDirection (i, bDown [i], t) && !nKey)
+		nKey = nDirKeys [i];
+if (nKey)
+	return nKey;
+
+// Buttons need no repeat, so take them as the events they are. Read all of
+// them whatever happens - an unread press stays queued and would arrive a
+// frame later, out of order with whatever came next.
+for (i = 0; i < int32_t (sizeofa (buttonKeys)); i++) {
+	if (buttonKeys [i].nButton >= j.nButtons)
+		continue;
+	if ((JoyGetButtonDownCnt (j.buttonMap [buttonKeys [i].nButton]) > 0) && !nKey)
+		nKey = buttonKeys [i].nKey;
+	}
+return nKey;
+}
+
+//------------------------------------------------------------------------------
+// The keyboard first, then whatever the pad stands for.
+//
+// A drop-in replacement for KeyInKey () in any loop that a player without a
+// keyboard has to be able to get through.
+
+int32_t MenuInKey (void)
+{
+	int32_t nKey = KeyInKey ();
+
+return nKey ? nKey : JoyMenuKey ();
 }
 
 //------------------------------------------------------------------------------

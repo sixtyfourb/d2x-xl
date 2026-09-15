@@ -1045,6 +1045,12 @@ int32_t CControlConfig::ChangeControl (kcItem *item, int32_t nType, kc_ctrlfunc_
 	if (IsMultiGame && (gameStates.app.nFunctionMode == FMODE_GAME) && (!gameStates.app.bEndLevelSequence))
 		MultiMenuPoll ();
 	k = KeyInKey ();
+	// A pad may back out of capturing a keyboard or mouse binding, which it
+	// has no way of supplying anyway. It must not back out of capturing a
+	// joystick binding: there the button that would mean "cancel" is exactly
+	// the button the player is trying to bind.
+	if (!k && (nType != BT_JOY_BUTTON) && (nType != BT_JOY_AXIS))
+		k = JoyMenuKey ();
 	if (k == KEY_ESC)
 		return AssignControl (item, BT_NONE, 255);
 	if (k == KEY_PRINT_SCREEN) {
@@ -1279,7 +1285,7 @@ int32_t CControlConfig::HandleInput (void)
 	int32_t		i, k;
 	uint8_t*	pControls; // required to make sure the g++ optimizer doesn't break the loops below
 
-k = KeyInKey ();
+k = MenuInKey ();
 if (!m_bTimeStopped && (MultiMenuPoll () == -1))
 	return -1;
 

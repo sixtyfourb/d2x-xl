@@ -418,7 +418,7 @@ for (i = 0; i < 3; i++)
 		return Exit () ? -1 : 1;
 
 //see if redbook song needs to be restarted
-int32_t k = KeyInKey ();
+int32_t k = MenuInKey ();
 switch (k) {
 	case KEY_ENTER:
 	case KEY_SPACEBAR:

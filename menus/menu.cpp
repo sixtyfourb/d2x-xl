@@ -1507,7 +1507,7 @@ if (m_bWheelUp)
 else if (m_bWheelDown)
 	m_nKey = KEY_DOWN;
 else
-	m_nKey = KeyInKey ();
+	m_nKey = MenuInKey ();
 #endif
 
 #if DBG

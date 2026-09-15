@@ -362,7 +362,7 @@ while (!m_bDone) {
 	else if (bWheelDown)
 		m_nKey = KEY_DOWN;
 	else
-		m_nKey = KeyInKey ();
+		m_nKey = MenuInKey ();
 	switch (m_nKey) {
 		case KEY_CTRLED + KEY_F1:
 			SwitchDisplayMode (-1);

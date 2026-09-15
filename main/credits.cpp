@@ -230,7 +230,7 @@ return true;
 
 bool CCreditsRenderer::HandleInput (void)
 {
-int32_t k = KeyInKey ();
+int32_t k = MenuInKey ();
 
 if ((k == KEY_PRINT_SCREEN) || (k == KEY_COMMAND + KEY_SHIFTED + KEY_P)) {
 	gameStates.app.bSaveScreenShot = 1;
