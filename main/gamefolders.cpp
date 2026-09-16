@@ -436,9 +436,9 @@ GetAppFolder (gameFolders.game.szRoot, gameFolders.game.szMovies, MOVIE_FOLDER, 
 if (GetAppFolder (gameFolders.game.szRoot, gameFolders.game.szModels, MODEL_FOLDER, "*.ase"))
 	GetAppFolder (gameFolders.game.szRoot, gameFolders.game.szModels, MODEL_FOLDER, "*.oof");
 
-MakeFolder (gameFolders.game.szSounds [0], gameFolders.game.szRoot, MUSIC_FOLDER);
-MakeFolder (gameFolders.game.szMusic [0], gameFolders.game.szSounds [0], MUSIC_FOLDER_D2);
-MakeFolder (gameFolders.game.szMusic [1], gameFolders.game.szSounds [0], MUSIC_FOLDER_D1);
+MakeFolder (gameFolders.game.szMusic [2], gameFolders.game.szRoot, MUSIC_FOLDER);
+MakeFolder (gameFolders.game.szMusic [0], gameFolders.game.szMusic [2], MUSIC_FOLDER_D2);
+MakeFolder (gameFolders.game.szMusic [1], gameFolders.game.szMusic [2], MUSIC_FOLDER_D1);
 
 MakeFolder (gameFolders.game.szSounds [0], gameFolders.game.szRoot, SOUND_FOLDER);
 MakeFolder (gameFolders.game.szSounds [3], gameFolders.game.szSounds [0], SOUND_FOLDER_D2); // temp usage

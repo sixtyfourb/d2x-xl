@@ -9,6 +9,7 @@
 #include "midi.h"
 #include "rwops.h"
 #include "strutil.h"
+#include "findfile.h"
 
 CMidi midi;
 
@@ -123,6 +124,78 @@ if (gameStates.sound.bMidiFix && (songManager.Playing () <= 0)) {
 }
 
 //------------------------------------------------------------------------------
+/* Point SDL_mixer at a SoundFont it can actually open.
+ *
+ * The songs in the HOG files are MIDI, so something has to synthesize them, and
+ * on anything but Windows that something is SDL_mixer. Its FluidSynth backend
+ * needs a SoundFont and knows of exactly one: whichever path was compiled into
+ * the library. That path names a package of the distribution SDL_mixer itself
+ * was packaged for, which is not the distribution this runs on, so it is not
+ * there. The TiMidity fallback then wants /etc/timidity.cfg and a patch set,
+ * which are not there either, and every song fails to load with "Couldn't open
+ * timidity.cfg" - the game plays no music at all, and until now said nothing
+ * about why.
+ *
+ * So look for a SoundFont among the game's own files, where whoever installs
+ * the game can put one, and name it to SDL_mixer. SDL_SOUNDFONTS in the
+ * environment still wins, and so does a compiled-in default that really exists.
+ */
+
+#if USE_SDL_MIXER
+
+static bool SoundFontIsReadable (const char* pszFile)
+{
+	FILE* fp = pszFile && *pszFile ? fopen (pszFile, "rb") : NULL;
+
+if (!fp)
+	return false;
+fclose (fp);
+return true;
+}
+
+//------------------------------------------------------------------------------
+
+static void SetupSoundFont (void)
+{
+	static int32_t	bDone = 0;
+
+	const char*		pszFolders [] = {gameFolders.game.szMusic [2], gameFolders.game.szMusic [0], gameFolders.game.szRoot};
+	const char*		pszPatterns [] = {"*.sf2", "*.sf3"};
+	char				szFilter [FILENAME_LEN];
+	char				szSoundFont [FILENAME_LEN];
+	FFS				ffs;
+
+if (bDone)
+	return;
+bDone = 1;
+if (getenv ("SDL_SOUNDFONTS"))	// somebody has already said which one to use
+	return;
+for (int32_t i = 0; i < int32_t (sizeofa (pszFolders)); i++) {
+	if (!*pszFolders [i])
+		continue;
+	for (int32_t j = 0; j < int32_t (sizeofa (pszPatterns)); j++) {
+		sprintf (szFilter, "%s%s", pszFolders [i], pszPatterns [j]);
+		if (FFF (szFilter, &ffs, 0))
+			continue;
+		sprintf (szSoundFont, "%s%s", pszFolders [i], ffs.name);
+		FFC (&ffs);
+		if (Mix_SetSoundFonts (szSoundFont)) {
+			PrintLog (0, "playing MIDI music with the SoundFont %s\n", szSoundFont);
+			return;
+			}
+		PrintLog (0, "cannot use the SoundFont %s (%s)\n", szSoundFont, Mix_GetError ());
+		}
+	}
+if (SoundFontIsReadable (Mix_GetSoundFonts ()))
+	PrintLog (0, "playing MIDI music with the SoundFont SDL_mixer was built for (%s)\n", Mix_GetSoundFonts ());
+else
+	PrintLog (0, "no SoundFont found, so MIDI music cannot be played.\n"
+					 "   Put a .sf2 file in '%s', or name one in SDL_SOUNDFONTS.\n", gameFolders.game.szMusic [2]);
+}
+
+#endif //USE_SDL_MIXER
+
+//------------------------------------------------------------------------------
 
 static Mix_MusicType GetMusicType(const char *file, SDL_RWops *rw)
 {
@@ -173,6 +246,7 @@ if (!(pszSong && *pszSong)) {
 	return 0;
 	}
 if (m_nVolume < 1) {
+	PrintLog (0, "the music volume is turned all the way down\n");
 	PrintLog (-1);
 	return 0;
 	}
@@ -185,6 +259,7 @@ if (bCustom) {
 		}
 	}
 else if (!(m_hmp = hmp_open (pszSong, bD1Song))) {
+	PrintLog (0, "could not read the song %s\n", pszSong);
 	PrintLog (-1);
 	return 0;
 	}
@@ -209,6 +284,8 @@ if (gameOpts->sound.bUseSDLMixer) {
 			}
 		pfnSong = fnSong;
 		}
+	if (!bCustom)
+		SetupSoundFont ();
 	try {
 		SDL_RWops* rw = CFileOpenRWOps (pfnSong, NULL);
 		m_music = Mix_LoadMUSType_RW (rw, GetMusicType(pfnSong, rw), 1);
@@ -217,7 +294,7 @@ if (gameOpts->sound.bUseSDLMixer) {
 		SetVolume (gameConfig.nMidiVolume = 0);
 		}
 	if (!m_music) {
-		PrintLog (0, "SDL_mixer failed to load %s\n(%s)\n", fnSong, Mix_GetError ());
+		PrintLog (0, "SDL_mixer failed to load %s\n(%s)\n", pfnSong, Mix_GetError ());
 		PrintLog (-1);
 		return 0;
 		}
