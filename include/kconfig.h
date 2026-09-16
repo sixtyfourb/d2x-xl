@@ -304,6 +304,7 @@ class CControlConfig : public CMenu {
 		const char*	m_pszTitle;
 
 		static int32_t	m_startAxis [JOY_MAX_AXES];
+		static uint8_t	m_startButtons [JOY_MAX_BUTTONS];
 
 	private:
 		void Edit (kcItem* items, int32_t nItems);

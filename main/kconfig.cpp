@@ -403,6 +403,7 @@ uint8_t ExtXVibrateClear=0;
 uint8_t ExtYVibrateClear=0;
 
 int32_t CControlConfig::m_startAxis [JOY_MAX_AXES];
+uint8_t CControlConfig::m_startButtons [JOY_MAX_BUTTONS];
 
 CControlConfig controlConfig;
 
@@ -962,6 +963,20 @@ uint8_t CControlConfig::JoyBtnCtrlFunc (int32_t nChangeState)
 	int32_t	i;
 	uint8_t code = 255;
 
+// Note which buttons are already down as the capture opens, and ignore those
+// until they are let go.
+//
+// Every axis contributes a pair of buttons so that a trigger can be bound, and
+// a stick resting even slightly off centre therefore reads as a button held
+// down. Taking the first button that is down then captures the stick rather
+// than the button the player pressed - which is how "slide left" ended up bound
+// to the left stick's own left deflection, fighting the axis it was also bound
+// to. It also stops the button used to open the capture from instantly
+// rebinding itself.
+if (!nChangeState)
+	for (i = 0; i < JOY_MAX_BUTTONS; i++)
+		m_startButtons [i] = (uint8_t) JoyGetButtonState (i);
+
 if (gameStates.input.nJoyType == CONTROL_THRUSTMASTER_FCS) {
 	int32_t axis [JOY_MAX_AXES];
 	JoyReadRawAxis (JOY_ALL_AXIS, axis);
@@ -986,7 +1001,7 @@ else if (gameStates.input.nJoyType == CONTROL_FLIGHTSTICK_PRO) {
 	}
 else {
 	for (i = 0; i < JOY_MAX_BUTTONS; i++) {
-		if (JoyGetButtonState (i))
+		if (JoyGetButtonState (i) && !m_startButtons [i])
 			return (uint8_t) i;
 		}
 	}
@@ -1367,6 +1382,10 @@ switch (k) {
 		break;
 
 	case KEY_DELETE:
+	// Space clears a binding too, because the pad has no Delete key to offer.
+	// Without this a player on a handheld can bind a control but never unbind
+	// one, and a binding captured by accident is permanent.
+	case KEY_SPACEBAR:
 		m_items [m_nCurItem].value = 255;
 		DrawItem (m_items + m_nCurItem, 1);
 		break;
