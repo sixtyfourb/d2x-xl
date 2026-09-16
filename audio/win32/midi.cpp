@@ -124,76 +124,25 @@ if (gameStates.sound.bMidiFix && (songManager.Playing () <= 0)) {
 }
 
 //------------------------------------------------------------------------------
-/* Point SDL_mixer at a SoundFont it can actually open.
+/* There is deliberately no SoundFont handling here.
  *
- * The songs in the HOG files are MIDI, so something has to synthesize them, and
- * on anything but Windows that something is SDL_mixer. Its FluidSynth backend
- * needs a SoundFont and knows of exactly one: whichever path was compiled into
- * the library. That path names a package of the distribution SDL_mixer itself
- * was packaged for, which is not the distribution this runs on, so it is not
- * there. The TiMidity fallback then wants /etc/timidity.cfg and a patch set,
- * which are not there either, and every song fails to load with "Couldn't open
- * timidity.cfg" - the game plays no music at all, and until now said nothing
- * about why.
+ * SDL_mixer synthesizes MIDI through FluidSynth, which needs a SoundFont, and
+ * the one it is built to look for belongs to whichever distribution packaged
+ * it. Pointing it at a SoundFont shipped with the game did produce music - and
+ * then died with SIGBUS on this hardware somewhere inside the synthesizer, a
+ * signal the engine's own handler does not even catch, so the game vanished
+ * without a word in the log.
  *
- * So look for a SoundFont among the game's own files, where whoever installs
- * the game can put one, and name it to SDL_mixer. SDL_SOUNDFONTS in the
- * environment still wins, and so does a compiled-in default that really exists.
+ * It was not worth chasing, because it was answering the wrong question. The
+ * music these games are meant to play is the Ogg soundtrack, which
+ * CMidi::PlaySong () already looks for first and which plays perfectly; the
+ * HMP files are the fallback for when that is not installed. A fallback that
+ * kills the process is worse than one that plays nothing, and a General MIDI
+ * wavetable rendering is not what the original sounded like either.
+ *
+ * Without a SoundFont set, SDL_mixer fails the load cleanly and says so, which
+ * the log lines below now report.
  */
-
-#if USE_SDL_MIXER
-
-static bool SoundFontIsReadable (const char* pszFile)
-{
-	FILE* fp = pszFile && *pszFile ? fopen (pszFile, "rb") : NULL;
-
-if (!fp)
-	return false;
-fclose (fp);
-return true;
-}
-
-//------------------------------------------------------------------------------
-
-static void SetupSoundFont (void)
-{
-	static int32_t	bDone = 0;
-
-	const char*		pszFolders [] = {gameFolders.game.szMusic [2], gameFolders.game.szMusic [0], gameFolders.game.szRoot};
-	const char*		pszPatterns [] = {"*.sf2", "*.sf3"};
-	char				szFilter [FILENAME_LEN];
-	char				szSoundFont [FILENAME_LEN];
-	FFS				ffs;
-
-if (bDone)
-	return;
-bDone = 1;
-if (getenv ("SDL_SOUNDFONTS"))	// somebody has already said which one to use
-	return;
-for (int32_t i = 0; i < int32_t (sizeofa (pszFolders)); i++) {
-	if (!*pszFolders [i])
-		continue;
-	for (int32_t j = 0; j < int32_t (sizeofa (pszPatterns)); j++) {
-		sprintf (szFilter, "%s%s", pszFolders [i], pszPatterns [j]);
-		if (FFF (szFilter, &ffs, 0))
-			continue;
-		sprintf (szSoundFont, "%s%s", pszFolders [i], ffs.name);
-		FFC (&ffs);
-		if (Mix_SetSoundFonts (szSoundFont)) {
-			PrintLog (0, "playing MIDI music with the SoundFont %s\n", szSoundFont);
-			return;
-			}
-		PrintLog (0, "cannot use the SoundFont %s (%s)\n", szSoundFont, Mix_GetError ());
-		}
-	}
-if (SoundFontIsReadable (Mix_GetSoundFonts ()))
-	PrintLog (0, "playing MIDI music with the SoundFont SDL_mixer was built for (%s)\n", Mix_GetSoundFonts ());
-else
-	PrintLog (0, "no SoundFont found, so MIDI music cannot be played.\n"
-					 "   Put a .sf2 file in '%s', or name one in SDL_SOUNDFONTS.\n", gameFolders.game.szMusic [2]);
-}
-
-#endif //USE_SDL_MIXER
 
 //------------------------------------------------------------------------------
 
@@ -284,8 +233,6 @@ if (gameOpts->sound.bUseSDLMixer) {
 			}
 		pfnSong = fnSong;
 		}
-	if (!bCustom)
-		SetupSoundFont ();
 	try {
 		SDL_RWops* rw = CFileOpenRWOps (pfnSong, NULL);
 		m_music = Mix_LoadMUSType_RW (rw, GetMusicType(pfnSong, rw), 1);
