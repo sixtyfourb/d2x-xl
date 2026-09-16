@@ -888,10 +888,19 @@ if (gameOpts->sound.bUseSDLMixer) {
 		h = Mix_OpenAudio (int32_t (gameOpts->sound.audioSampleRate / fSlowDown), m_info.nFormat = AUDIO_U8, 2, SOUND_BUFFER_SIZE);
 	else 
 #endif
-	if (gameOpts->UseHiresSound ())
-		h = OpenMixer (int32_t ((gameOpts->sound.audioSampleRate = SAMPLE_RATE_44K) / fSlowDown), m_info.nFormat = AUDIO_S16SYS);
-	else 
-		h = OpenMixer (int32_t ((gameOpts->sound.audioSampleRate = SAMPLE_RATE_22K) / fSlowDown), m_info.nFormat = AUDIO_U8);
+	// Honour a format the caller asked for.
+	//
+	// PlaySong () reopens the mixer as AUDIO_S16SYS before starting an Ogg,
+	// because that is what the decoder hands back. That request was set on
+	// m_info at the top of this function and then thrown away right here, the
+	// format being assigned inline in the call - so the music went to an 8 bit
+	// mixer and came out silent. The parameter only overrides the choice; with
+	// nothing asked for, the sound quality setting still decides.
+	int32_t nMixerFormat = (nFormat >= 0) ? nFormat
+								: gameOpts->UseHiresSound () ? AUDIO_S16SYS : AUDIO_U8;
+
+	gameOpts->sound.audioSampleRate = gameOpts->UseHiresSound () ? SAMPLE_RATE_44K : SAMPLE_RATE_22K;
+	h = OpenMixer (int32_t (gameOpts->sound.audioSampleRate / fSlowDown), m_info.nFormat = nMixerFormat);
 	if (h < 0)
 		RETVAL (1)
 #if 1
