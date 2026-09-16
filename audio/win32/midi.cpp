@@ -245,6 +245,11 @@ if (gameOpts->sound.bUseSDLMixer) {
 		PrintLog (-1);
 		return 0;
 		}
+	// What the mixer will actually play it at. Every step up to here reports
+	// success whether or not a sound comes out, so say the one number that
+	// decides it.
+	PrintLog (0, "music volume %d of %d (config %d)\n",
+				 Mix_VolumeMusic (-1), MIX_MAX_VOLUME, gameConfig.nMidiVolume);
 	if (-1 == Mix_FadeInMusicPos (m_music, bLoop ? -1 : 1, !gameOpts->sound.bFadeMusic ? 0 : songManager.Pos () ? 1000 : 1500, (double) songManager.Pos () / 1000.0)) {
 		PrintLog (0, "SDL_mixer cannot play %s\n(%s)\n", pszSong, Mix_GetError ());
 		songManager.SetPos (0);
