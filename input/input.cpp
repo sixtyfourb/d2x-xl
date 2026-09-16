@@ -691,11 +691,17 @@ for (i = 0; i < 60; i += 30) {
 			m_info [0].useInvulDownCount += JoyGetButtonDownCnt (v);
 
 		// Axis movements
+		// Note the sense: adding when not inverted, which is how every other
+		// slide path here works - the slide-modifier branch below drives the
+		// same sidewaysThrustTime that way, and the slide up/down axis beside
+		// it does too. This one axis subtracted instead, so the dedicated slide
+		// axis ran backwards with inversion switched off, and switching it on
+		// was the only way to get it the right way round.
 		if ((v = kcJoystick [i + 15].value) < 255) {
 			if (kcJoystick [62].value)		// If inverted...
-				m_info [0].sidewaysThrustTime += m_joyAxis [v];
-			else
 				m_info [0].sidewaysThrustTime -= m_joyAxis [v];
+			else
+				m_info [0].sidewaysThrustTime += m_joyAxis [v];
 			}
 		if ((v = kcJoystick [i + 16].value) < 255) {
 			if (kcJoystick [63].value)		// If inverted...
