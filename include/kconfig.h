@@ -227,7 +227,11 @@ typedef struct kcItem {
 #define NUM_JOY_CONTROLS		KcJoystickSize () //66
 #define NUM_SUPERJOY_CONTROLS	KcSuperJoySize () //66
 #define NUM_MOUSE_CONTROLS		KcMouseSize () //31
-#define MAX_CONTROLS				64		// there are actually 48, so this leaves room for more
+// Wide enough for the largest control table, which is the joystick's at 66.
+// It was 64, and the code indexes these rows by NUM_JOY_CONTROLS - so the last
+// two entries, the bank and throttle inversion flags, were read and written
+// past the end of the array.
+#define MAX_CONTROLS				72
 
 typedef struct tControlSettings {
 	uint8_t		custom [CONTROL_MAX_TYPES][MAX_CONTROLS];
