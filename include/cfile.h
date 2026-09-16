@@ -140,7 +140,7 @@ typedef struct tStaticFolders {
 	char	szTextures [3][FILENAME_LEN];
 	char	szModels [FILENAME_LEN];
 	char	szSounds [5][FILENAME_LEN];
-	char	szMusic [2][FILENAME_LEN];
+	char	szMusic [3][FILENAME_LEN];	// [0] D2, [1] D1, [2] the folder holding both
 	char	szMovies [FILENAME_LEN];
 	char	szShaders [FILENAME_LEN];
 	char	szAltHogs [FILENAME_LEN];
