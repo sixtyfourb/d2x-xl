@@ -780,6 +780,59 @@ RETVAL (1)
 }
 
 //------------------------------------------------------------------------------
+/* Open the mixer in exactly the format the engine is going to feed it.
+ *
+ * Every sample CAudioChannel::Resample () builds is two channel - it duplicates
+ * each byte into a left and a right - and it reaches the mixer through
+ * Mix_QuickLoad_WAV (), which does not read the header it is handed. It skips
+ * to the data chunk and plays those bytes as they are. So the mixer has to be
+ * running in the rate, format and channel count the engine produces, or the
+ * bytes are read as something they are not.
+ *
+ * Mix_OpenAudio () makes no such promise: it passes
+ * SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE, so the
+ * driver may hand back whatever the hardware would rather do. This code asked
+ * it for a single channel and relied on being given two. Under PulseAudio that
+ * does not happen - it can resample and remix anything, so it granted the mono
+ * that was asked for, and the mixer then read the two interleaved copies of
+ * every sample as two consecutive mono samples. A 441 Hz tone came back out of
+ * the speakers at 220 Hz: every sound effect an octave low and twice as long,
+ * overlapping and clipping against the next one.
+ *
+ * So ask for stereo, and forbid any substitution. SDL will convert to whatever
+ * the device wants, which is its job, instead of quietly changing the format
+ * the engine has to produce.
+ */
+
+#if USE_SDL_MIXER
+
+static int32_t OpenMixer (int32_t nSampleRate, int32_t nFormat)
+{
+	int			nFreq = 0, nChannels = 0;
+	uint16_t		nMixFormat = 0;
+	int32_t		h;
+
+#if SDL_VERSION_ATLEAST (2, 0, 0)
+h = Mix_OpenAudioDevice (nSampleRate, uint16_t (nFormat), 2, SOUND_BUFFER_SIZE, NULL, 0);
+#else
+h = Mix_OpenAudio (nSampleRate, uint16_t (nFormat), 2, SOUND_BUFFER_SIZE);
+#endif
+if (h < 0) {
+	PrintLog (0, "could not open the mixer at %d Hz, format 0x%04x, 2 channels (%s)\n",
+				 nSampleRate, nFormat, Mix_GetError ());
+	return h;
+	}
+Mix_QuerySpec (&nFreq, &nMixFormat, &nChannels);
+PrintLog (0, "audio mixer: %d Hz, format 0x%04x, %d channels\n", nFreq, nMixFormat, nChannels);
+if ((nFreq != nSampleRate) || (nMixFormat != uint16_t (nFormat)) || (nChannels != 2))
+	PrintLog (0, "   the mixer is not running in the format that was asked for "
+				 "(%d Hz, 0x%04x, 2 channels) - sounds will play wrong\n", nSampleRate, nFormat);
+return h;
+}
+
+#endif //USE_SDL_MIXER
+
+//------------------------------------------------------------------------------
 /* Initialise audio devices. */
 int32_t CAudio::InternalSetup (float fSlowDown, int32_t nFormat, const char* driver)
 {
@@ -836,9 +889,9 @@ if (gameOpts->sound.bUseSDLMixer) {
 	else 
 #endif
 	if (gameOpts->UseHiresSound ())
-		h = Mix_OpenAudio (int32_t ((gameOpts->sound.audioSampleRate = SAMPLE_RATE_44K) / fSlowDown), m_info.nFormat = AUDIO_S16SYS, 2, SOUND_BUFFER_SIZE);
+		h = OpenMixer (int32_t ((gameOpts->sound.audioSampleRate = SAMPLE_RATE_44K) / fSlowDown), m_info.nFormat = AUDIO_S16SYS);
 	else 
-		h = Mix_OpenAudio (int32_t ((gameOpts->sound.audioSampleRate = SAMPLE_RATE_22K) / fSlowDown), m_info.nFormat = AUDIO_U8, 1, SOUND_BUFFER_SIZE);
+		h = OpenMixer (int32_t ((gameOpts->sound.audioSampleRate = SAMPLE_RATE_22K) / fSlowDown), m_info.nFormat = AUDIO_U8);
 	if (h < 0)
 		RETVAL (1)
 #if 1
