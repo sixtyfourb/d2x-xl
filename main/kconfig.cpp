@@ -1016,8 +1016,20 @@ memset (curAxis, 0, sizeof (curAxis));
 controls.Configure (true);
 controls.ReadJoystick (curAxis);
 controls.Configure (false);
+// Note where every axis is sitting as the capture opens, and watch for movement
+// away from that rather than for a large reading.
+//
+// A shoulder trigger rests at one end of its travel, so it reads as fully
+// deflected while untouched - and ReadJoyAxis hands back the raw value, the
+// calibration having been compiled out years ago. Taking the largest reading
+// therefore picked the trigger every single time, whatever the player actually
+// moved, and every axis on the screen ended up bound to "J1 Z".
+//
+// The mechanism was already here, just commented out on both sides.
+if (!nChangeState)
+	memcpy (m_startAxis, curAxis, sizeof (m_startAxis));
 for (i = dd = 0; i < JOY_MAX_AXES; i++) {
-	hd = abs (curAxis [i]); // - m_startAxis [i]);
+	hd = abs (curAxis [i] - m_startAxis [i]);
   	if ((hd > 3 * 128 / 4) && (hd > dd)) {
 		dd = hd;
 		code = i;
