@@ -201,6 +201,18 @@ if (m_nVolume < 1) {
 	}
 
 bCustom = ((strstr (pszSong, ".ogg") != NULL) || strstr (pszSong, ".flac"));
+// The mixer is deliberately left alone for an Ogg.
+//
+// This used to shut the audio down and open it again as AUDIO_S16SYS, on the
+// reasoning that the decoder produces 16 bit samples. It does, but SDL_mixer
+// converts music to the device format on its way through - it is only the
+// sound effects that go in raw, through Mix_QuickLoad_WAV, and have to match.
+//
+// Tearing the device down and rebuilding it mid-game left a mixer that reported
+// every success and played silence: the music loaded, started, and sat at full
+// volume while the speaker monitor recorded mathematically zero. Effects
+// measured loud in the same game as long as no song had triggered the reopen.
+// Nothing needed converting, and the conversion cost us all the sound.
 if (bCustom) {
 	if (audio.Format () != AUDIO_S16SYS) {
 		audio.Shutdown ();

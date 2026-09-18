@@ -81,6 +81,9 @@
 //} cockpitOpts;
 
 static int32_t nWindowPos, nWindowAlign, nTgtInd;
+static const int32_t nCockpitTypes [3] = {CM_FULL_COCKPIT, CM_STATUS_BAR, CM_FULL_SCREEN};
+static const char* szCockpitTypes [3] = {"full cockpit", "status bar", "full screen"};
+static int32_t nCockpitType = 2;
 
 #if WEAPON_ICONS
 static int32_t	optWeaponIcons, bShowWeaponIcons, optIconAlpha;
@@ -124,6 +127,15 @@ if (dir != bShowWeaponIcons) {
 	return nCurItem;
 	}
 #endif
+
+if ((m = menu ["cockpit type"])) {
+	v = m->Value ();
+	if (nCockpitType != v) {
+		nCockpitType = v;
+		sprintf (m->m_text, "cockpit: %s", szCockpitTypes [v]);
+		m->Rebuild ();
+		}
+	}
 
 if ((m = menu ["show hud"])) {
 	v = m->Value ();
@@ -399,9 +411,22 @@ bShowWeaponIcons = (extraGameInfo [0].nWeaponIcons != 0);
 
 nTgtInd = extraGameInfo [0].bMslLockIndicators ? extraGameInfo [0].bTargetIndicators ? 2 : 1 : 0;
 
+// Cockpit type, as an index over the three a player can actually pick.
+// CM_REAR_VIEW and CM_LETTERBOX are transient states the game enters by
+// itself, so they are not offered here.
+nCockpitType = 2;
+for (i = 0; i < 3; i++)
+	if (nCockpitTypes [i] == gameStates.render.cockpit.nType) {
+		nCockpitType = i;
+		break;
+		}
+
 do {
 	m.Destroy ();
 	m.Create (20, "CockpitOptionsMenu");
+
+	sprintf (szSlider, "cockpit: %s", szCockpitTypes [nCockpitType]);
+	m.AddSlider ("cockpit type", szSlider, nCockpitType, 0, 2, KEY_K, HTX_CPIT_SHOWHUD);
 
 	sprintf (szSlider, TXT_SHOW_HUD, szHUDType [gameOpts->render.cockpit.bHUD]);
 	m.AddSlider ("show hud", szSlider, gameOpts->render.cockpit.bHUD, 0, 2, KEY_U, HTX_CPIT_SHOWHUD);
@@ -512,6 +537,13 @@ do {
 	if (i >= 0)
 		for (int32_t j = 0; j < 2; j++)
 			gameStates.render.cockpit.n3DView [i] = winFuncList [winFunc [j]];
+	GET_VAL (nCockpitType, "cockpit type");
+	// Activate() is the only way to set the cockpit type - F3 is a system key
+	// and cannot be bound, so a player on a handheld who lands in full screen
+	// has no way back to a cockpit without this.
+	if ((nCockpitType >= 0) && (nCockpitType < 3) &&
+		 (nCockpitTypes [nCockpitType] != gameStates.render.cockpit.nType))
+		cockpit->Activate (nCockpitTypes [nCockpitType]);
 	GET_VAL (gameOpts->render.cockpit.bReticle, "show reticle");
 	GET_VAL (gameOpts->render.cockpit.bHUD, "show hud");
 	GET_VAL (gameOpts->render.cockpit.bMissileView, "missile view");

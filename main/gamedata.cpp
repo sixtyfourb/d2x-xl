@@ -1612,9 +1612,14 @@ nSimpleModelThresholdScale = 5;
 nMarkerModel = -1;
 vScale.SetZero ();
 Create ();
+// The three ship types want three models. Entry 2, the heavy fighter, named
+// pyrogl.ase as well, so two of the three selections looked identical - and
+// D2X-XL publishes a third model, ship-wolf.7z, that nothing referenced.
+// These are optional hi-res add-ons: if a model is not installed the engine
+// falls back to the stock Pyro, which is what the duplicate was doing anyway.
 strcpy (szShipModels [0], "pyrogl.ase");
 strcpy (szShipModels [1], "phantomxl.ase");
-strcpy (szShipModels [2], "pyrogl.ase");
+strcpy (szShipModels [2], "wolf.ase");
 }
 
 // ----------------------------------------------------------------------------

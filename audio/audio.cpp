@@ -813,7 +813,17 @@ static int32_t OpenMixer (int32_t nSampleRate, int32_t nFormat)
 	int32_t		h;
 
 #if SDL_VERSION_ATLEAST (2, 0, 0)
-h = Mix_OpenAudioDevice (nSampleRate, uint16_t (nFormat), 2, SOUND_BUFFER_SIZE, NULL, 0);
+// Let the driver renegotiate the rate, as the plain Mix_OpenAudio this
+// replaced always did, and as the Android build still does - it is only the
+// channel count that has to be two, because the effects are built stereo and
+// go to the mixer raw. Pinning every field instead turned out to buy nothing
+// and is the one thing that differs from the configuration known to work.
+// Load the Ogg Vorbis decoder. Without this the codec is registered lazily at
+// best; asking for it costs nothing and makes Mix_LoadMUS () on the soundtrack
+// deterministic.
+Mix_Init (MIX_INIT_OGG);
+h = Mix_OpenAudioDevice (nSampleRate, uint16_t (nFormat), 2, SOUND_BUFFER_SIZE, NULL,
+								 SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 #else
 h = Mix_OpenAudio (nSampleRate, uint16_t (nFormat), 2, SOUND_BUFFER_SIZE);
 #endif
@@ -896,13 +906,36 @@ if (gameOpts->sound.bUseSDLMixer) {
 	// format being assigned inline in the call - so the music went to an 8 bit
 	// mixer and came out silent. The parameter only overrides the choice; with
 	// nothing asked for, the sound quality setting still decides.
-	int32_t nMixerFormat = (nFormat >= 0) ? nFormat
-								: gameOpts->UseHiresSound () ? AUDIO_S16SYS : AUDIO_U8;
+	// This SDL_mixer cannot resample a 44.1 kHz Ogg down into a 22 kHz device.
+	// It does not fail: Mix_PlayMusic () returns 0, then the track ends on the
+	// first buffer even when told to loop forever, and the output is
+	// mathematically zero. Measured on the soundtrack, same file, same build -
+	// 22050 peak 0 at both U8 and S16, 44100 peak 14171 at U8 and 14567 at
+	// S16. The whole soundtrack is 44.1 kHz Vorbis, so the mixer runs there
+	// whatever the sound quality setting asks for.
+	//
+	// The effects do not care. Resample () scales them by audioSampleRate /
+	// soundSampleRate and writes them in the mixer's current format, so they
+	// follow the device up: 44100 / 22050 and 44100 / 11025 are both exact.
+	int32_t nMixerFormat = (nFormat >= 0) ? nFormat : AUDIO_S16SYS;
 
-	gameOpts->sound.audioSampleRate = gameOpts->UseHiresSound () ? SAMPLE_RATE_44K : SAMPLE_RATE_22K;
+	gameOpts->sound.audioSampleRate = SAMPLE_RATE_44K;
 	h = OpenMixer (int32_t (gameOpts->sound.audioSampleRate / fSlowDown), m_info.nFormat = nMixerFormat);
 	if (h < 0)
 		RETVAL (1)
+	// OpenMixer lets the driver renegotiate the rate, and Resample () keys off
+	// audioSampleRate, so take back whatever the device actually settled on -
+	// otherwise every effect is built at the wrong ratio and comes out
+	// mispitched.
+	{
+		int32_t	nFreq = 0, nChannels = 0;
+		uint16_t	nMixFormat = 0;
+
+	if (Mix_QuerySpec (&nFreq, &nMixFormat, &nChannels) && (nFreq > 0)) {
+		gameOpts->sound.audioSampleRate = int32_t (nFreq * fSlowDown);
+		m_info.nFormat = nMixFormat;
+		}
+	}
 #if 1
 	Mix_Resume (-1);
 	Mix_ResumeMusic ();

@@ -696,6 +696,25 @@ for (n = 0; n < gameStates.input.nJoysticks; n++) {
 			PrintLog (0, "pad: joystick %d Start -> menu\n", n);
 		return KEY_ESC;
 		}
+
+	// Back cycles the cockpit, because F3 is a system key rather than a
+	// bindable control - there is no way to reach it from the pad through the
+	// normal bindings, so a player who cycles into full screen has no way back
+	// to a cockpit or a HUD on a handheld with no keyboard.
+	if (JOY_MENU_BUTTON_BACK < j.nButtons) {
+			int32_t nBack = j.buttonMap [JOY_MENU_BUTTON_BACK] + n * MAX_BUTTONS_PER_JOYSTICK;
+
+		for (i = 0; i < NUM_JOY_CONTROLS; i++)
+			if ((kcJoystick [i].nType == BT_JOY_BUTTON) && (kcJoystick [i].value == nBack))
+				break;
+		if (i >= NUM_JOY_CONTROLS) {
+			if (JoyGetButtonDownCnt (nBack) > 0) {
+				if (bLogPadInput)
+					PrintLog (0, "pad: joystick %d Back -> cockpit toggle\n", n);
+				return KEY_F3;
+				}
+			}
+		}
 	}
 return 0;
 }

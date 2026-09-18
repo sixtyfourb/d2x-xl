@@ -515,7 +515,13 @@ fontManager.SetCurrent (GAME_FONT);
 DrawReticle (ogl.StereoDevice () < 0);
 //gameData.renderData.scene.Deactivate ();
 
-if (!GuidedMissileActive () && ((gameOpts->render.cockpit.bHUD > 1) || (gameStates.render.cockpit.nType < CM_FULL_SCREEN)) && (gameStates.zoom.nFactor == float (gameStates.zoom.nMinFactor))) {
+// bHUD is a three-way setting - off, minimal, full - but minimal had no
+// implementation: the whole block below was gated on bHUD > 1, so in full
+// screen "minimal hud" drew exactly as much as "no hud", which is nothing.
+// Let minimal in, and draw only the ship state for it further down.
+const bool bMinimalHUD = (gameOpts->render.cockpit.bHUD == 1) && (gameStates.render.cockpit.nType >= CM_FULL_SCREEN);
+
+if (!GuidedMissileActive () && ((gameOpts->render.cockpit.bHUD > 0) || (gameStates.render.cockpit.nType < CM_FULL_SCREEN)) && (gameStates.zoom.nFactor == float (gameStates.zoom.nMinFactor))) {
 	if (ogl.IsOculusRift () && !transformation.HaveHeadAngles ()) {
 		nOffsetSave = gameData.SetStereoOffsetType (STEREO_OFFSET_NONE);
 		int32_t w, h;
@@ -566,6 +572,13 @@ if (!GuidedMissileActive () && ((gameOpts->render.cockpit.bHUD > 1) || (gameStat
 			DrawFrameRate ();
 			DrawCruise ();
 			}
+		if (bMinimalHUD) {
+			// Shield and energy, and the one warning worth interrupting for.
+			DrawEnergyLevels ();
+			if (!bLimited)
+				DrawHomingWarning ();
+			}
+		else {
 		DrawPacketLoss ();
 		DrawSlowMotion ();
 		DrawPlayerStats ();
@@ -588,6 +601,7 @@ if (!GuidedMissileActive () && ((gameOpts->render.cockpit.bHUD > 1) || (gameStat
 			DrawHomingWarning ();
 			DrawKillList ();
 			DrawPlayerShip ();
+			}
 			}
 		if (!bStereoOffset)
 			gameData.renderData.scene.Activate ("CGenericCockpit::Render (scene, 2)");
