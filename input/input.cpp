@@ -169,6 +169,19 @@ else {
 
 //------------------------------------------------------------------------------
 
+// Is this axis bound to pitch, turn or bank? Rows 13, 14 and 17 of each of the
+// two joystick banks, the same way the throttle's deadzone is looked up below.
+static inline int32_t IsRotationAxis (int32_t i)
+{
+for (int32_t b = 0; b < 60; b += 30)
+	for (int32_t k = 13; k <= 17; k++)
+		if (((k == 13) || (k == 14) || (k == 17)) && (kcJoystick [b + k].value == i))
+			return 1;
+return 0;
+}
+
+//------------------------------------------------------------------------------
+
 int32_t CControlsManager::ReadJoyAxis (int32_t i, int32_t rawJoyAxis [])
 {
 int32_t dz = Configuring () ? 0 : joyDeadzone [i % UNIQUE_JOY_AXES]; // / 128;
@@ -181,8 +194,20 @@ else if (h < -dz)
 	h = (int32_t) FRound ((h + dz) * 32767.0f / float (32767 - dz));
 else
 	h = 0;
-h = AttenuateAxis (h / 256, i);
-return Configuring () ? h : (int32_t) ((h * m_pollTime) / 128);
+// Only the axes that steer get the sensitivity curve. It used to be applied
+// here, to every axis, so the throttle was shaped by it too and the ship's top
+// speed moved with the sensitivity slider - at the default exponent of 4.5 half
+// a stick of throttle was 4% of full thrust. Speed should be the stick's to
+// set, and the curve only decides how the nose responds.
+if (IsRotationAxis (i))
+	h = AttenuateAxis (h / 256, i);
+else
+	h /= 256;
+// m_frameTime, not m_pollTime. Full deflection has to come out equal to the
+// clamp in Read (), which is one frame; scaled by the whole 40 Hz interval it
+// reached the ceiling at 1/m_frameCount of the travel - half a stick at 60 fps,
+// a third at 120 - and everything past that did nothing.
+return Configuring () ? h : (int32_t) ((h * (int32_t) m_frameTime) / 128);
 }
 
 //------------------------------------------------------------------------------
@@ -1207,6 +1232,12 @@ m_frameCount++;
 m_pollTime += gameData.timeData.xFrame;
 if (!gameStates.app.tick40fps.bTick)
 	return 1;
+// The clamp is one frame's worth, not the whole 40 Hz interval, because the
+// value is re-applied on every rendered frame between reads - it becomes
+// physInfo.rotThrust / thrust, which the physics integrates to a steady state
+// proportional to the value itself. Clamping to the interval instead multiplies
+// every rate by the frames-per-read: 2x at 60 fps, 3x at 120. dxx-redux reads
+// every frame and scales by FrameTime, and this is the same quantity.
 m_frameTime = float (m_pollTime) / m_frameCount;
 m_maxTurnRate = int32_t (m_frameTime);
 #endif
