@@ -348,7 +348,10 @@ for (i = 0; i < 2; i++) {
 	extraGameInfo [i].bMouseLook = i ? 0 : 1;
 	extraGameInfo [i].nWeaponIcons = 3;
 	extraGameInfo [i].bSafeUDP = 0;
-	extraGameInfo [i].bFastPitch = 2;
+	// Pitch as fast as yaw for one player. At 2 the pitch clamp is halved, which
+	// is the stock feel and stays the rule for a netgame - the host dictates it
+	// there, and it is forced back to 2 on load anyway.
+	extraGameInfo [i].bFastPitch = i ? 2 : 1;
 	extraGameInfo [i].bUseParticles = 1;
 	extraGameInfo [i].bUseLightning = 1;
 	extraGameInfo [i].bDamageExplosions = 1;

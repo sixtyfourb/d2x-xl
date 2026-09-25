@@ -527,7 +527,12 @@ if (i) {
 else {
 	bLimitTurnRate = 1;
 	nMinTurnRate = 20;	//turn time for a 360 deg rotation around a single ship axis in 1/10 sec units
-	joystick.bLinearSens = 0;
+	// Proportional, because the curve behind this flag is unusable on a pad.
+	// AttenuateAxis raises deflection to the power joySensMod / 16, and
+	// joySensMod is 128 - 7 * sensitivity - so the 0..16 slider is really an
+	// exponent of 8.0 down to 1.0, and only its very top is linear. Anywhere in
+	// the middle the first half of a thumbstick's travel does nothing at all.
+	joystick.bLinearSens = 1;
 	keyboard.nRamp = 100;
 	keyboard.bRamp [0] =
 	keyboard.bRamp [1] =
@@ -557,10 +562,15 @@ else {
 	trackIR.sensitivity [0] =
 	trackIR.sensitivity [1] =
 	trackIR.sensitivity [2] = 8;
+	// 16, not the slider's middle. In linear mode the gain is 16 / joySensMod,
+	// which is 1.0 only at 16 and 0.22 at 8 - so anything less than the top of
+	// the slider is pure attenuation, and full deflection would not reach the
+	// turn rate the clamp already allows. Below 16 it is a gentler stick, which
+	// is what a slider should do.
 	joystick.sensitivity [0] =
 	joystick.sensitivity [1] =
 	joystick.sensitivity [2] =
-	joystick.sensitivity [3] = 8;
+	joystick.sensitivity [3] = 16;
 	joystick.deadzones [0] =
 	joystick.deadzones [1] =
 	joystick.deadzones [2] =

@@ -1045,24 +1045,24 @@ tParamValue defaultParams [] = {
 	 {"gameOptions[0].render.particles.nQuality", "2"},
 	 {"gameOptions[0].render.particles.bStatic", "1"},
 	 {"gameOptions[0].input.joystick.deadzones[0]", "1"},
-	 {"gameOptions[0].input.joystick.sensitivity[0]", "7"},
+	 {"gameOptions[0].input.joystick.sensitivity[0]", "16"},
 	 {"gameOptions[0].input.trackIR.bMove[0]", "1"},
 	 {"gameOptions[0].input.joystick.deadzones[1]", "1"},
-	 {"gameOptions[0].input.joystick.sensitivity[1]", "7"},
+	 {"gameOptions[0].input.joystick.sensitivity[1]", "16"},
 	 {"gameOptions[0].input.trackIR.bMove[1]", "1"},
 	 {"gameOptions[0].input.joystick.deadzones[2]", "1"},
-	 {"gameOptions[0].input.joystick.sensitivity[2]", "7"},
+	 {"gameOptions[0].input.joystick.sensitivity[2]", "16"},
 	 {"gameOptions[0].input.trackIR.bMove[2]", "1"},
 	 {"gameOptions[0].input.joystick.deadzones[3]", "1"},
-	 {"gameOptions[0].input.joystick.sensitivity[3]", "7"},
+	 {"gameOptions[0].input.joystick.sensitivity[3]", "16"},
 	 {"gameOptions[0].input.trackIR.bMove[3]", "0"},
 	 {"gameOptions[0].input.joystick.deadzones[4]", "1"},
-	 {"gameOptions[0].input.joystick.sensitivity[4]", "7"},
+	 {"gameOptions[0].input.joystick.sensitivity[4]", "16"},
 	 {"gameOptions[0].input.trackIR.bMove[4]", "1"},
 	 {"gameOptions[0].input.mouse.bJoystick", "0"},
 	 {"gameOptions[0].input.mouse.bSyncAxis", "1"},
 	 {"gameOptions[0].input.mouse.nDeadzone", "2"},
-	 {"gameOptions[0].input.joystick.bLinearSens", "0"},
+	 {"gameOptions[0].input.joystick.bLinearSens", "1"},
 	 {"gameOptions[0].input.joystick.bSyncAxis", "1"},
 	 {"gameOptions[0].input.oculusRift.nDeadzone", "2"},
 	 {"gameOptions[0].input.trackIR.nMode", "0"},
@@ -1154,7 +1154,7 @@ tParamValue defaultParams [] = {
 	 {"gameStates.render.cockpit.n3DView[0]", "0"},
 	 {"extraGameInfo[0].bDarkness", "0"},
 	 {"extraGameInfo[0].bEnableCheats", "0"},
-	 {"extraGameInfo[0].bFastPitch", "2"},
+	 {"extraGameInfo[0].bFastPitch", "1"},
 	 {"extraGameInfo[0].bFriendlyIndicators", "0"},
 	 {"extraGameInfo[0].bHeadlights", "0"},
 	 {"extraGameInfo[0].bMouseLook", "0"},
@@ -1323,41 +1323,50 @@ tParamValue defaultParams [] = {
 	 {"mouse.Cycle Primary.value", "3"},
 	 {"mouse.Cycle Second.value", "4"},
 	 {"mouse.Zoom in.value", "-1"},
-	 {"joystick.Fire primary[0].value", "0"},
-	 {"joystick.Fire secondary[0].value", "1"},
-	 {"joystick.Accelerate [0].value", "-1"},
-	 {"joystick.reverse [0].value", "-1"},
-	 {"joystick.Fire flare [0].value", "-1"},
+	 // Transcribed out of the 'player' pilot, hand-configured on a Retroid Pocket
+	 // Flip 2. This table, not controlSettings.defaults, is what a new pilot
+	 // actually gets: KCSetControls () returns before it copies anything, so
+	 // the hex rows in kconfig.cpp only serve Ctrl+R on the config screen.
+	 //
+	 // The tags have to match what RegisterConfig () builds - "<name>[n].value"
+	 // with no space before the bracket. Five of the stock entries had one
+	 // ("Accelerate ", "reverse ", "Fire flare ", "throttle "), and stricmp in
+	 // Find () never matched them, so those four controls had no default at all.
+	 {"joystick.Fire primary[0].value", "26"},
+	 {"joystick.Fire secondary[0].value", "5"},
+	 {"joystick.Accelerate[0].value", "-1"},
+	 {"joystick.reverse[0].value", "-1"},
+	 {"joystick.Fire flare[0].value", "12"},
 	 {"joystick.Slide on[0].value", "-1"},
-	 {"joystick.Slide left[0].value", "15"},
-	 {"joystick.Slide right[0].value", "13"},
-	 {"joystick.Slide up[0].value", "12"},
-	 {"joystick.Slide down[0].value", "14"},
+	 {"joystick.Slide left[0].value", "-1"},
+	 {"joystick.Slide right[0].value", "-1"},
+	 {"joystick.Slide up[0].value", "4"},
+	 {"joystick.Slide down[0].value", "20"},
 	 {"joystick.Bank on[0].value", "-1"},
-	 {"joystick.Bank left[0].value", "-1"},
-	 {"joystick.Bank right[0].value", "-1"},
-	 {"joystick.Pitch U/D[0].value", "1"},
-	 {"joystick.Turn L/R[0].value", "0"},
-	 {"joystick.Slide L/R[0].value", "-1"},
+	 {"joystick.Bank left[0].value", "2"},
+	 {"joystick.Bank right[0].value", "0"},
+	 {"joystick.Pitch U/D[0].value", "4"},
+	 {"joystick.Turn L/R[0].value", "3"},
+	 {"joystick.Slide L/R[0].value", "0"},
 	 {"joystick.Slide U/D[0].value", "-1"},
-	 {"joystick.Bank L/R[0].value", "3"},
-	 {"joystick.throttle [0].value", "2"},
-	 {"joystick.Rear View[0].value", "-1"},
-	 {"joystick.Drop Bomb[0].value", "5"},
-	 {"joystick.Afterburner[0].value", "4"},
-	 {"joystick.Cycle Primary[0].value", "2"},
-	 {"joystick.Cycle Secondary[0].value", "3"},
-	 {"joystick.Headlight[0].value", "-1"},
+	 {"joystick.Bank L/R[0].value", "-1"},
+	 {"joystick.throttle[0].value", "1"},
+	 {"joystick.Rear View[0].value", "13"},
+	 {"joystick.Drop Bomb[0].value", "-1"},
+	 {"joystick.Afterburner[0].value", "9"},
+	 {"joystick.Cycle Primary[0].value", "3"},
+	 {"joystick.Cycle Secondary[0].value", "1"},
+	 {"joystick.Headlight[0].value", "11"},
 	 {"joystick.Toggle Bomb[0].value", "-1"},
 	 {"joystick.Toggle Icons[0].value", "-1"},
-	 {"joystick.Automap[0].value", "-1"},
+	 {"joystick.Automap[0].value", "6"},
 	 {"joystick.Use Cloak[0].value", "-1"},
-	 {"joystick.Use Invul[0].value", "-1"},
+	 {"joystick.Use Invul[0].value", "14"},
 	 {"joystick.Fire primary[1].value", "32"},
 	 {"joystick.Fire secondary[1].value", "33"},
-	 {"joystick.Accelerate [1].value", "-1"},
-	 {"joystick.reverse [1].value", "-1"},
-	 {"joystick.Fire flare [1].value", "-1"},
+	 {"joystick.Accelerate[1].value", "-1"},
+	 {"joystick.reverse[1].value", "-1"},
+	 {"joystick.Fire flare[1].value", "-1"},
 	 {"joystick.Slide on[1].value", "-1"},
 	 {"joystick.Slide left[1].value", "43"},
 	 {"joystick.Slide right[1].value", "41"},
@@ -1366,12 +1375,12 @@ tParamValue defaultParams [] = {
 	 {"joystick.Bank on[1].value", "-1"},
 	 {"joystick.Bank left[1].value", "-1"},
 	 {"joystick.Bank right[1].value", "-1"},
-	 {"joystick.Pitch U/D[1].value", "9"},
+	 {"joystick.Pitch U/D[1].value", "-1"},
 	 {"joystick.Turn L/R[1].value", "8"},
 	 {"joystick.Slide L/R[1].value", "-1"},
 	 {"joystick.Slide U/D[1].value", "-1"},
 	 {"joystick.Bank L/R[1].value", "11"},
-	 {"joystick.throttle [1].value", "10"},
+	 {"joystick.throttle[1].value", "-1"},
 	 {"joystick.Rear View[1].value", "-1"},
 	 {"joystick.Drop Bomb[1].value", "37"},
 	 {"joystick.Afterburner[1].value", "36"},
@@ -1388,7 +1397,7 @@ tParamValue defaultParams [] = {
 	 {"joystick.Slide L/R[2].value", "0"},
 	 {"joystick.Slide U/D[2].value", "0"},
 	 {"joystick.Bank L/R[2].value", "0"},
-	 {"joystick.throttle [2].value", "0"},
+	 {"joystick.throttle[2].value", "0"},
 	 {"superjoy.Fire primary.value", "-1"},
 	 {"superjoy.Fire secondary.value", "-1"},
 	 {"superjoy.Accelerate.value", "-1"},
@@ -1666,11 +1675,13 @@ gameOptions [0].gameplay.nAutoLeveling = 1;
 nHighestLevels = 1;
 highestLevels [0].shortname [0] = 0;			//no name for mission 0
 highestLevels [0].nLevel = 1;				//was highest level in old struct
+// 16, matching CInputOptions::Init - the middle of the slider is 0.22 gain in
+// linear mode, and this used to quietly undo the default for every new pilot.
 gameOpts->input.joystick.sensitivity [0] =
 gameOpts->input.joystick.sensitivity [1] =
 gameOpts->input.joystick.sensitivity [2] =
 gameOpts->input.joystick.sensitivity [3] =
-gameOpts->input.joystick.sensitivity [4] = 8;
+gameOpts->input.joystick.sensitivity [4] = 16;
 gameOpts->input.mouse.sensitivity [0] =
 gameOpts->input.mouse.sensitivity [1] =
 gameOpts->input.mouse.sensitivity [2] = 8;
@@ -2046,7 +2057,7 @@ if (LOCALPLAYER.callsign [0] == 0) {
 	gameOpts->input.joystick.sensitivity [0] =
 	gameOpts->input.joystick.sensitivity [1] =
 	gameOpts->input.joystick.sensitivity [2] =
-	gameOpts->input.joystick.sensitivity [3] = 8;
+	gameOpts->input.joystick.sensitivity [3] = 16;
 	gameOpts->input.mouse.sensitivity [0] =
 	gameOpts->input.mouse.sensitivity [1] =
 	gameOpts->input.mouse.sensitivity [2] = 8;
